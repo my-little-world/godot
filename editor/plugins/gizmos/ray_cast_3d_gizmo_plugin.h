@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_run_script.h                                                   */
+/*  ray_cast_3d_gizmo_plugin.h                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,33 +28,21 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_RUN_SCRIPT_H
-#define EDITOR_RUN_SCRIPT_H
+#ifndef RAY_CAST_3D_GIZMO_PLUGIN_H
+#define RAY_CAST_3D_GIZMO_PLUGIN_H
 
-#include "core/object/gdvirtual.gen.inc"
-#include "core/object/ref_counted.h"
-#include "core/object/script_language.h"
+#include "editor/plugins/node_3d_editor_gizmos.h"
 
-class EditorInterface;
-class EditorNode;
-
-class EditorScript : public RefCounted {
-	GDCLASS(EditorScript, RefCounted);
-
-	EditorNode *editor = nullptr;
-
-protected:
-	static void _bind_methods();
-	GDVIRTUAL0(_run)
+class RayCast3DGizmoPlugin : public EditorNode3DGizmoPlugin {
+	GDCLASS(RayCast3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
 public:
-	void add_root_node(Node *p_node);
-	Node *get_scene();
-	EditorInterface *get_editor_interface();
-	virtual void _run();
+	bool has_gizmo(Node3D *p_spatial) override;
+	String get_gizmo_name() const override;
+	int get_priority() const override;
+	void redraw(EditorNode3DGizmo *p_gizmo) override;
 
-	void set_editor(EditorNode *p_editor);
-	EditorScript();
+	RayCast3DGizmoPlugin();
 };
 
-#endif // EDITOR_RUN_SCRIPT_H
+#endif // RAY_CAST_3D_GIZMO_PLUGIN_H

@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  editor_run_script.cpp                                                 */
+/*  occluder_instance_3d_gizmo_plugin.h                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,55 +28,26 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "editor_run_script.h"
+#ifndef OCCLUDER_INSTANCE_3D_GIZMO_PLUGIN_H
+#define OCCLUDER_INSTANCE_3D_GIZMO_PLUGIN_H
 
-#include "editor/editor_interface.h"
-#include "editor/editor_node.h"
+#include "editor/plugins/node_3d_editor_gizmos.h"
 
-void EditorScript::add_root_node(Node *p_node) {
-	if (!editor) {
-		EditorNode::add_io_error("EditorScript::add_root_node: " + TTR("Write your logic in the _run() method."));
-		return;
-	}
+class OccluderInstance3DGizmoPlugin : public EditorNode3DGizmoPlugin {
+	GDCLASS(OccluderInstance3DGizmoPlugin, EditorNode3DGizmoPlugin);
 
-	if (editor->get_edited_scene()) {
-		EditorNode::add_io_error("EditorScript::add_root_node: " + TTR("There is an edited scene already."));
-		return;
-	}
+public:
+	bool has_gizmo(Node3D *p_spatial) override;
+	String get_gizmo_name() const override;
+	int get_priority() const override;
+	void redraw(EditorNode3DGizmo *p_gizmo) override;
 
-	//editor->set_edited_scene(p_node);
-}
+	String get_handle_name(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const override;
+	Variant get_handle_value(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) const override;
+	void set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) override;
+	void commit_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, const Variant &p_restore, bool p_cancel = false) override;
 
-EditorInterface *EditorScript::get_editor_interface() {
-	return EditorInterface::get_singleton();
-}
+	OccluderInstance3DGizmoPlugin();
+};
 
-Node *EditorScript::get_scene() {
-	if (!editor) {
-		EditorNode::add_io_error("EditorScript::get_scene: " + TTR("Write your logic in the _run() method."));
-		return nullptr;
-	}
-
-	return editor->get_edited_scene();
-}
-
-void EditorScript::_run() {
-	if (!GDVIRTUAL_CALL(_run)) {
-		EditorNode::add_io_error(TTR("Couldn't run editor script, did you forget to override the '_run' method?"));
-	}
-}
-
-void EditorScript::set_editor(EditorNode *p_editor) {
-	editor = p_editor;
-}
-
-void EditorScript::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("add_root_node", "node"), &EditorScript::add_root_node);
-	ClassDB::bind_method(D_METHOD("get_scene"), &EditorScript::get_scene);
-	ClassDB::bind_method(D_METHOD("get_editor_interface"), &EditorScript::get_editor_interface);
-	GDVIRTUAL_BIND(_run);
-}
-
-EditorScript::EditorScript() {
-	editor = nullptr;
-}
+#endif // OCCLUDER_INSTANCE_3D_GIZMO_PLUGIN_H
