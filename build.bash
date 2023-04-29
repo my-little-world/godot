@@ -8,7 +8,7 @@ source env/bin/activate
 # Another option is to compile using platform libraries (https://docs.godotengine.org/en/latest/contributing/development/compiling/compiling_for_linuxbsd.html#requirements)
 
 # include the flag precision=double for double precision
-scons platform=linuxbsd module_mono_enabled=yes target=editor production=yes
+scons platform=linuxbsd module_mono_enabled=yes target=editor production=yes use_llvm=yes linker=lld
 
 ./bin/godot.linuxbsd.editor.x86_64.mono --headless --generate-mono-glue modules/mono/glue
 
