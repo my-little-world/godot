@@ -188,10 +188,12 @@ Size2 Control::_edit_get_minimum_size() const {
 
 void Control::reparent(Node *p_parent, bool p_keep_global_transform) {
 	ERR_MAIN_THREAD_GUARD;
-	Transform2D temp = get_global_transform();
-	Node::reparent(p_parent);
 	if (p_keep_global_transform) {
+		Transform2D temp = get_global_transform();
+		Node::reparent(p_parent);
 		set_global_position(temp.get_origin());
+	} else {
+		Node::reparent(p_parent);
 	}
 }
 
@@ -199,7 +201,7 @@ void Control::reparent(Node *p_parent, bool p_keep_global_transform) {
 
 void Control::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
 	ERR_READ_THREAD_GUARD;
-	Node::get_argument_options(p_function, p_idx, r_options);
+	CanvasItem::get_argument_options(p_function, p_idx, r_options);
 
 	if (p_idx == 0) {
 		List<StringName> sn;
@@ -1395,6 +1397,15 @@ void Control::_set_position(const Point2 &p_point) {
 
 void Control::set_position(const Point2 &p_point, bool p_keep_offsets) {
 	ERR_MAIN_THREAD_GUARD;
+
+#ifdef TOOLS_ENABLED
+	// Can't compute anchors, set position directly and return immediately.
+	if (saving && !is_inside_tree()) {
+		data.pos_cache = p_point;
+		return;
+	}
+#endif
+
 	if (p_keep_offsets) {
 		_compute_anchors(Rect2(p_point, data.size_cache), data.offset, data.anchor);
 	} else {
@@ -1454,6 +1465,14 @@ void Control::set_size(const Size2 &p_size, bool p_keep_offsets) {
 	if (new_size.y < min.y) {
 		new_size.y = min.y;
 	}
+
+#ifdef TOOLS_ENABLED
+	// Can't compute anchors, set size directly and return immediately.
+	if (saving && !is_inside_tree()) {
+		data.size_cache = new_size;
+		return;
+	}
+#endif
 
 	if (p_keep_offsets) {
 		_compute_anchors(Rect2(data.pos_cache, new_size), data.offset, data.anchor);
@@ -3133,6 +3152,14 @@ Control *Control::make_custom_tooltip(const String &p_text) const {
 void Control::_notification(int p_notification) {
 	ERR_MAIN_THREAD_GUARD;
 	switch (p_notification) {
+#ifdef TOOLS_ENABLED
+		case NOTIFICATION_EDITOR_PRE_SAVE: {
+			saving = true;
+		} break;
+		case NOTIFICATION_EDITOR_POST_SAVE: {
+			saving = false;
+		} break;
+#endif
 		case NOTIFICATION_POSTINITIALIZE: {
 			data.initialized = true;
 

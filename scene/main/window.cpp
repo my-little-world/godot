@@ -284,7 +284,13 @@ void Window::set_title(const String &p_title) {
 		embedder->_sub_window_update(this);
 	} else if (window_id != DisplayServer::INVALID_WINDOW_ID) {
 		DisplayServer::get_singleton()->window_set_title(tr_title, window_id);
-		_update_window_size();
+		if (keep_title_visible) {
+			Size2i title_size = DisplayServer::get_singleton()->window_get_title_size(tr_title, window_id);
+			Size2i size_limit = get_clamped_minimum_size();
+			if (title_size.x > size_limit.x || title_size.y > size_limit.y) {
+				_update_window_size();
+			}
+		}
 	}
 }
 
@@ -702,6 +708,9 @@ void Window::_event_callback(DisplayServer::WindowEvent p_event) {
 			if (!is_inside_tree()) {
 				return;
 			}
+			// Ensure keeping the order of input events and window events when input events are buffered or accumulated.
+			Input::get_singleton()->flush_buffered_events();
+
 			Window *root = get_tree()->get_root();
 			if (!root->gui.windowmanager_window_over) {
 #ifdef DEV_ENABLED
@@ -961,6 +970,10 @@ Size2i Window::_clamp_window_size(const Size2i &p_size) {
 
 void Window::_update_window_size() {
 	Size2i size_limit = get_clamped_minimum_size();
+	if (!embedder && window_id != DisplayServer::INVALID_WINDOW_ID && keep_title_visible) {
+		Size2i title_size = DisplayServer::get_singleton()->window_get_title_size(tr_title, window_id);
+		size_limit = size_limit.max(title_size);
+	}
 
 	size = size.max(size_limit);
 
@@ -992,12 +1005,6 @@ void Window::_update_window_size() {
 		}
 
 		DisplayServer::get_singleton()->window_set_max_size(max_size_used, window_id);
-
-		if (keep_title_visible) {
-			Size2i title_size = DisplayServer::get_singleton()->window_get_title_size(tr_title, window_id);
-			size_limit = size_limit.max(title_size);
-		}
-
 		DisplayServer::get_singleton()->window_set_min_size(size_limit, window_id);
 		DisplayServer::get_singleton()->window_set_size(size, window_id);
 	}
@@ -1297,7 +1304,13 @@ void Window::_notification(int p_what) {
 
 			if (!embedder && window_id != DisplayServer::INVALID_WINDOW_ID) {
 				DisplayServer::get_singleton()->window_set_title(tr_title, window_id);
-				_update_window_size();
+				if (keep_title_visible) {
+					Size2i title_size = DisplayServer::get_singleton()->window_get_title_size(tr_title, window_id);
+					Size2i size_limit = get_clamped_minimum_size();
+					if (title_size.x > size_limit.x || title_size.y > size_limit.y) {
+						_update_window_size();
+					}
+				}
 			}
 		} break;
 
@@ -2625,9 +2638,6 @@ void Window::_update_mouse_over(Vector2 p_pos) {
 		if (is_embedded()) {
 			mouse_in_window = true;
 			_propagate_window_notification(this, NOTIFICATION_WM_MOUSE_ENTER);
-		} else {
-			// Prevent update based on delayed InputEvents from DisplayServer.
-			return;
 		}
 	}
 

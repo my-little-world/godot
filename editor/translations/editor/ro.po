@@ -15,7 +15,7 @@
 # f0roots <f0rootss@gmail.com>, 2020.
 # Gigel2 <mihalacher02@gmail.com>, 2020.
 # R3ktGamerRO <bluegamermc1@gmail.com>, 2021.
-# FlooferLand <yunaflarf@gmail.com>, 2021, 2022.
+# FlooferLand <yunaflarf@gmail.com>, 2021, 2022, 2024.
 # N3mEee <n3mebusiness@gmail.com>, 2021.
 # Psynt <nichita@cadvegra.com>, 2022.
 # Ilie Adrian Avramescu <himark1977@protonmail.com>, 2022.
@@ -29,13 +29,14 @@
 # Alexandra Moroz <allemoroz14@gmail.com>, 2023.
 # Alin Andrei Bălașa <alin.andrei.balasa+godotweblate@gmail.com>, 2023.
 # Cătălin George Feștilă <catalinfest@gmail.com>, 2023.
+# Vasile Milea <milea.vasile959@gmail.com>, 2023.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor interface\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2023-09-26 22:41+0000\n"
-"Last-Translator: Cătălin George Feștilă <catalinfest@gmail.com>\n"
+"PO-Revision-Date: 2024-02-10 09:01+0000\n"
+"Last-Translator: FlooferLand <yunaflarf@gmail.com>\n"
 "Language-Team: Romanian <https://hosted.weblate.org/projects/godot-engine/"
 "godot/ro/>\n"
 "Language: ro\n"
@@ -44,7 +45,10 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.4-dev\n"
+
+msgid "Main Thread"
+msgstr "Fir principal"
 
 msgid "Unset"
 msgstr "Nesetat"
@@ -325,21 +329,6 @@ msgstr "Schimbă Durata Animației"
 msgid "Change Animation Loop"
 msgstr "Schimbați Bucla Animației"
 
-msgid "Property Track"
-msgstr "Lista De Proprietati"
-
-msgid "Call Method Track"
-msgstr "Cheama linia de metode"
-
-msgid "Bezier Curve Track"
-msgstr "Traseu curbă Bezier"
-
-msgid "Audio Playback Track"
-msgstr "Cale Audio Playback"
-
-msgid "Animation Playback Track"
-msgstr "Oprește rularea animației"
-
 msgid "Animation length (frames)"
 msgstr "Lungime Animație (în frame-uri)"
 
@@ -418,9 +407,6 @@ msgstr "Limitați intercalarea buclei"
 
 msgid "Wrap Loop Interp"
 msgstr "Înfășurați intercalarea buclei"
-
-msgid "Insert Key"
-msgstr "Inserare cheie"
 
 msgid "Duplicate Key(s)"
 msgstr "Clonare Chei"
@@ -556,15 +542,6 @@ msgstr "Modificare"
 
 msgid "Animation properties."
 msgstr "Proprietăți animație."
-
-msgid "Copy Tracks"
-msgstr "Copiază Piste"
-
-msgid "Scale Selection"
-msgstr "Scalați Selecția"
-
-msgid "Scale From Cursor"
-msgstr "Scalați De La Cursor"
 
 msgid "Duplicate Selection"
 msgstr "Duplicați Selecția"
@@ -758,8 +735,14 @@ msgstr "Ești sigur că vrei să ștergi toate conexiunile de la acest semnal?"
 msgid "Disconnect All"
 msgstr "Deconectați Toate"
 
+msgid "Copy Name"
+msgstr "Copiați Numele"
+
 msgid "Edit..."
 msgstr "Modificare..."
+
+msgid "Change Type of \"%s\""
+msgstr "Schimbă Tipul lui \"%s\""
 
 msgid "Change"
 msgstr "Schimbați"
@@ -769,6 +752,9 @@ msgstr "Creați %s Nou"
 
 msgid "No results for \"%s\"."
 msgstr "Niciun rezultat pentru \"%s\"."
+
+msgid "This class is marked as experimental."
+msgstr "Această clasă este marcată ca experimentală."
 
 msgid "No description available for %s."
 msgstr "Nu exista o descriere pentru %s."
@@ -787,6 +773,9 @@ msgstr "Potriviri:"
 
 msgid "Description:"
 msgstr "Descriere:"
+
+msgid "Debugger"
+msgstr "Debugger"
 
 msgid "Debug"
 msgstr "Depanare"
@@ -1688,17 +1677,6 @@ msgstr ""
 "Dezactivez addon-ul de la '%s' pentru a preveni erori ulterioare."
 
 msgid ""
-"Unable to load addon script from path: '%s' Base type is not EditorPlugin."
-msgstr ""
-"Nu a putut fi încărcat scriptul add-on din calea: '%s' tipul de Bază nu este "
-"EditorPlugin."
-
-msgid "Unable to load addon script from path: '%s' Script is not in tool mode."
-msgstr ""
-"Nu a putut fi încărcat scriptul add-on din calea: '%s' Scriptul nu este în "
-"modul unealtă."
-
-msgid ""
 "Scene '%s' was automatically imported, so it can't be modified.\n"
 "To make changes to it, a new inherited scene can be created."
 msgstr ""
@@ -1746,14 +1724,14 @@ msgstr ""
 "Scena selectată ’%s’ nu este un fișier scenă, selectați una validă?\n"
 "Puteți schimba mai târziu în „Setări Proiect” în categoria „Aplicație”."
 
+msgid "Default"
+msgstr "Implicit"
+
 msgid "Save Layout"
 msgstr "Salvează Schema"
 
 msgid "Delete Layout"
 msgstr "Șterge Schema"
-
-msgid "Default"
-msgstr "Implicit"
 
 msgid "Save & Close"
 msgstr "Salvează și închide"
@@ -1991,14 +1969,17 @@ msgstr "Cheie Nouă:"
 msgid "New Value:"
 msgstr "Valoare Nouă:"
 
+msgid "Load..."
+msgstr "Încărca..."
+
 msgid "Save As..."
 msgstr "Salvează Ca..."
 
 msgid "Show in FileSystem"
 msgstr "Afișare în FileSystem"
 
-msgid "Extend Script"
-msgstr "Extinde Script"
+msgid "New Script..."
+msgstr "Script nou ..."
 
 msgid "Write your logic in the _run() method."
 msgstr "Scrie logica programului în metoda _run()."
@@ -2183,9 +2164,6 @@ msgstr "Director Nou..."
 
 msgid "New Scene..."
 msgstr "Scenă nouă..."
-
-msgid "New Script..."
-msgstr "Script nou ..."
 
 msgid "New Resource..."
 msgstr "Resursă nouă ..."
@@ -2520,9 +2498,6 @@ msgstr "Adaugă Animația"
 
 msgid "Add %s"
 msgstr "Adaugă %s"
-
-msgid "Load..."
-msgstr "Încărca..."
 
 msgid "Move Node Point"
 msgstr "Mută punct nod"
@@ -3040,6 +3015,9 @@ msgstr "Previzualizare Scară Canvas"
 
 msgid "Insert keys (based on mask)."
 msgstr "Introduce cheile (bazat pe masca)."
+
+msgid "Insert Key"
+msgstr "Inserare cheie"
 
 msgid "Auto Insert Key"
 msgstr "Inserare Automată a Cheii"
@@ -3800,7 +3778,7 @@ msgid "Invalid macro argument list."
 msgstr "Lista argumente invalidă a macrocomenzi"
 
 msgid "Invalid macro argument."
-msgstr "Argument invalid pentru macrocomendă"
+msgstr "Argument macro invalid."
 
 msgid "Invalid macro argument count."
 msgstr "Contor argument invalid pentru macrocomendă"

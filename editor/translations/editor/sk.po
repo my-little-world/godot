@@ -18,13 +18,14 @@
 # Lukáš Ševc <sevclukas0@gmail.com>, 2023.
 # Milan Šalka <salka.milan@googlemail.com>, 2023.
 # Mikuláš Suchanovský <mikulassuchanovsky@protonmail.com>, 2023.
+# Ellie Star <gender.thief.star@gmail.com>, 2023.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor interface\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2023-11-26 04:03+0000\n"
-"Last-Translator: Mikuláš Suchanovský <mikulassuchanovsky@protonmail.com>\n"
+"PO-Revision-Date: 2023-12-02 19:36+0000\n"
+"Last-Translator: Ellie Star <gender.thief.star@gmail.com>\n"
 "Language-Team: Slovak <https://hosted.weblate.org/projects/godot-engine/godot/"
 "sk/>\n"
 "Language: sk\n"
@@ -32,7 +33,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Generator: Weblate 5.2.1-rc\n"
+"X-Generator: Weblate 5.3-dev\n"
 
 msgid "Main Thread"
 msgstr "Hlavné vlákno"
@@ -133,6 +134,9 @@ msgstr "Späť, Sony Select, Xbox Back, Nintendo -"
 msgid "Guide, Sony PS, Xbox Home"
 msgstr "Sprievodca, Sony PS, Xbox Home"
 
+msgid "Start, Xbox Menu, Nintendo +"
+msgstr "Štart, Xbox Menu, Nintendo +"
+
 msgid "Left Stick, Sony L3, Xbox L/LS"
 msgstr "Ľavá páčka, Sony L3, Xbox L/LS"
 
@@ -157,11 +161,29 @@ msgstr "D-pad vľavo"
 msgid "D-pad Right"
 msgstr "D-pad vpravo"
 
+msgid "Xbox Share, PS5 Microphone, Nintendo Capture"
+msgstr "Xbox zdieľanie, PS5 mikrofón, Nintendo záznam"
+
+msgid "Xbox Paddle 1"
+msgstr "Xbox pádlo 1"
+
+msgid "Xbox Paddle 2"
+msgstr "Xbox pádlo 2"
+
+msgid "Xbox Paddle 3"
+msgstr "Xbox pádlo 3"
+
+msgid "Xbox Paddle 4"
+msgstr "Xbox pádlo 4"
+
 msgid "PS4/5 Touchpad"
 msgstr "PS4/5 Touchpad"
 
 msgid "Joypad Button %d"
 msgstr "Joypad Tlačidlo %d"
+
+msgid "Pressure:"
+msgstr "Tlak:"
 
 msgid "canceled"
 msgstr "zrušený"
@@ -189,6 +211,9 @@ msgstr "Gesto presúvania na (%s) s deltou (%s)"
 msgid "MIDI Input on Channel=%s Message=%s"
 msgstr "Vstup MIDI na Kanále=%s Správa=%s"
 
+msgid "Input Event with Shortcut=%s"
+msgstr "Vstupná udalosť so skratkou=%s"
+
 msgid "Accept"
 msgstr "Potvrdiť"
 
@@ -197,6 +222,12 @@ msgstr "Zvoliť"
 
 msgid "Cancel"
 msgstr "Zrušiť"
+
+msgid "Focus Next"
+msgstr "Zamerať ďalšie"
+
+msgid "Focus Prev"
+msgstr "Zamerať predchádzajúce"
 
 msgid "Left"
 msgstr "Vľavo"
@@ -237,6 +268,9 @@ msgstr "Späť"
 msgid "Redo"
 msgstr "Prerobiť"
 
+msgid "Completion Query"
+msgstr "Dotaz na dokončenie"
+
 msgid "New Line"
 msgstr "Nový riadok"
 
@@ -251,6 +285,9 @@ msgstr "Odsadenie"
 
 msgid "Dedent"
 msgstr "Zmazať odsadenie"
+
+msgid "Backspace"
+msgstr "Backspace"
 
 msgid "Backspace Word"
 msgstr "Zmazať slovo naľavo"
@@ -324,6 +361,15 @@ msgstr "Označiť slovo pod kurzorom"
 msgid "Add Selection for Next Occurrence"
 msgstr "Pridať ďalší výskyt do označenia"
 
+msgid "Clear Carets and Selection"
+msgstr "Vyčistiť vsuvky a výber"
+
+msgid "Toggle Insert Mode"
+msgstr "Prepnúť mód vloženia"
+
+msgid "Submit Text"
+msgstr "Odoslať text"
+
 msgid "Duplicate Nodes"
 msgstr "Duplikovať Nody"
 
@@ -338,6 +384,12 @@ msgstr "Obnoviť"
 
 msgid "Show Hidden"
 msgstr "Zobraziť Skryté"
+
+msgid "Swap Input Direction"
+msgstr "Prevrátiť smer vstupu"
+
+msgid "Invalid input %d (not passed) in expression"
+msgstr "Nesprávny vstup %d (neprešiel) vo výraze"
 
 msgid "self can't be used because instance is null (not passed)"
 msgstr "self nemôže byť použité, pretože inštancia je null (nie je platná)"
@@ -406,6 +458,9 @@ msgstr "Akcia s názvom '%s' už existuje."
 msgid "Cannot Revert - Action is same as initial"
 msgstr "Nie je možný návrat - akcia je rovnaká ako počiatočná"
 
+msgid "Revert Action"
+msgstr "Vrátiť akciu"
+
 msgid "Add Event"
 msgstr "Pridať udalosť"
 
@@ -423,6 +478,9 @@ msgstr "Odstrániť Udalosť"
 
 msgid "Filter by name..."
 msgstr "Filtrovať podľa názvu..."
+
+msgid "Clear All"
+msgstr "Vyčistiť všetko"
 
 msgid "Add New Action"
 msgstr "Pridať Novú Akciu"
@@ -445,6 +503,9 @@ msgstr "Čas:"
 msgid "Value:"
 msgstr "Hodnota:"
 
+msgid "Update Selected Key Handles"
+msgstr "Upraviť vybrané rukoväte kľúčov"
+
 msgid "Insert Key Here"
 msgstr "Tu vložte kľúč"
 
@@ -453,6 +514,15 @@ msgstr "Duplikovať kľúč(e)"
 
 msgid "Delete Selected Key(s)"
 msgstr "Zmazať označené kľúč(e)"
+
+msgid "Make Handles Free"
+msgstr "Uvoľniť rukoväte"
+
+msgid "Make Handles Linear"
+msgstr "Spraviť rukoväte lineárne"
+
+msgid "Make Handles Balanced"
+msgstr "Spraviť rukoväte balancované"
 
 msgid "Add Bezier Point"
 msgstr "Pridať Bezier bod"
@@ -476,33 +546,6 @@ msgid "Can't change loop mode on animation instanced from imported scene."
 msgstr ""
 "Nie je možné zmeniť mód cyklenia v animácií, inštanciovanej v importovanej "
 "scéne."
-
-msgid "Property Track"
-msgstr "Stopa vlastnosti"
-
-msgid "3D Position Track"
-msgstr "Stopa 3D pozície"
-
-msgid "3D Rotation Track"
-msgstr "Stopa 3D rotácie"
-
-msgid "3D Scale Track"
-msgstr "Stopa 3D škálovania"
-
-msgid "Blend Shape Track"
-msgstr "Stopa prelínania tvarov"
-
-msgid "Call Method Track"
-msgstr "Stopa volania metódy"
-
-msgid "Bezier Curve Track"
-msgstr "Stopa Bézierovej krivky"
-
-msgid "Audio Playback Track"
-msgstr "Stopa Prehrávania zvuku"
-
-msgid "Animation Playback Track"
-msgstr "Stopa Prehrávania animácie"
 
 msgid "Animation length (frames)"
 msgstr "Dĺžka animácie (v snímkoch)"
@@ -590,9 +633,6 @@ msgstr "Clamp Loop Interp"
 
 msgid "Wrap Loop Interp"
 msgstr "Wrap Loop Interp"
-
-msgid "Insert Key"
-msgstr "Vložiť Kľúč"
 
 msgid "Duplicate Key(s)"
 msgstr "Duplikovanie Kľúčov"
@@ -725,15 +765,6 @@ msgstr "Upraviť"
 
 msgid "Animation properties."
 msgstr "Vlastnosti Animácie."
-
-msgid "Copy Tracks"
-msgstr "Kopírovať track-y"
-
-msgid "Scale Selection"
-msgstr "Zmeniť veľkosť výberu"
-
-msgid "Scale From Cursor"
-msgstr "Zmeniť veľkosť od kurzora"
 
 msgid "Duplicate Selection"
 msgstr "Duplikovať výber"
@@ -2785,15 +2816,6 @@ msgstr ""
 "Deaktivujem addon z '%s', aby sa predišlo ďalším chybám."
 
 msgid ""
-"Unable to load addon script from path: '%s' Base type is not EditorPlugin."
-msgstr ""
-"Nepodarilo sa načítať addon script z cesty: '%s' Base type není EditorPlugin."
-
-msgid "Unable to load addon script from path: '%s' Script is not in tool mode."
-msgstr ""
-"Nepodarilo sa načítať addon script z cesty: '%s' Script není v tool móde."
-
-msgid ""
 "Scene '%s' was automatically imported, so it can't be modified.\n"
 "To make changes to it, a new inherited scene can be created."
 msgstr ""
@@ -2846,14 +2868,14 @@ msgstr ""
 "Neskôr ju môžete zmeniť v \"Nastaveniach Projekta\" pod kategóriou "
 "'application'."
 
+msgid "Default"
+msgstr "Predvolené"
+
 msgid "Save Layout"
 msgstr "Uložiť Layout"
 
 msgid "Delete Layout"
 msgstr "Odstrániť Layout"
-
-msgid "Default"
-msgstr "Predvolené"
 
 msgid "Save & Close"
 msgstr "Uložiť & Zatvoriť"
@@ -2872,6 +2894,12 @@ msgid ""
 msgstr ""
 "Nie je možné zapisovať do súboru '%s', súbor sa používa, je uzamknutý alebo "
 "chýbajú dostatočné oprávnenia."
+
+msgid "Mobile"
+msgstr "Mobil"
+
+msgid "Compatibility"
+msgstr "Kompatibilita"
 
 msgid "Pan View"
 msgstr "Zobrazenie Pan"
@@ -3007,15 +3035,6 @@ msgstr "Poslať spätnú väzbu Dokumentácie"
 
 msgid "Support Godot Development"
 msgstr "Podporte vývoj Godot"
-
-msgid "Choose a renderer."
-msgstr "Zvoliť renderer."
-
-msgid "Mobile"
-msgstr "Mobil"
-
-msgid "Compatibility"
-msgstr "Kompatibilita"
 
 msgid "Update Continuously"
 msgstr "Aktualizovať priebežne"
@@ -3228,8 +3247,8 @@ msgid ""
 msgstr ""
 "Vybraný prostriedok (%s) sa nezhoduje žiadnemu typu pre túto vlastnosť (%s)."
 
-msgid "Quick Load"
-msgstr "Rýchle načítanie"
+msgid "Load..."
+msgstr "Načítať..."
 
 msgid "Make Unique"
 msgstr "Spraviť Jedinečným"
@@ -3243,11 +3262,8 @@ msgstr "Ukázať v FileSystéme"
 msgid "New %s"
 msgstr "Nový %s"
 
-msgid "New Script"
-msgstr "Nový Script"
-
-msgid "Extend Script"
-msgstr "\"Extendovaný\" Script"
+msgid "New Script..."
+msgstr "Nový Script..."
 
 msgid "Remote Debug"
 msgstr "Vzdialené Ladenie"
@@ -3808,9 +3824,6 @@ msgstr "Nový Priečinok..."
 msgid "New Scene..."
 msgstr "Nová Scéna..."
 
-msgid "New Script..."
-msgstr "Nový Script..."
-
 msgid "New Resource..."
 msgstr "Nový Prostriedok..."
 
@@ -4369,9 +4382,6 @@ msgstr "Pridať Animáciu"
 
 msgid "Add %s"
 msgstr "Pridať %s"
-
-msgid "Load..."
-msgstr "Načítať..."
 
 msgid "Move Node Point"
 msgstr "Presunúť Bod Nodu"
@@ -5142,6 +5152,9 @@ msgstr "Veľkostná maska na vkladanie kľúčov."
 
 msgid "Insert keys (based on mask)."
 msgstr "Vkladanie kľúčov (založené na maske)."
+
+msgid "Insert Key"
+msgstr "Vložiť Kľúč"
 
 msgid ""
 "Auto insert keys when objects are translated, rotated or scaled (based on "
@@ -6883,9 +6896,6 @@ msgstr ""
 
 msgid "Can't paste root node into the same scene."
 msgstr "Nedá sa vložiť koreňový node do tej istej scény."
-
-msgid "Reparent to New Node"
-msgstr "Znovu spraviť rodičom Novému Nodu"
 
 msgid "Toggle Access as Unique Name"
 msgstr "Prepnúť Pristúpovať ako Jedinečný Názov"

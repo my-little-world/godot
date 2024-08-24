@@ -17,13 +17,14 @@
 # Nuttapong Nut <nuttapong.510123@gmail.com>, 2023.
 # LadsForTea <jajasamag@gmail.com>, 2023.
 # Satakun Utama <galaxytomostore@gmail.com>, 2023.
+# รัชพล คิดการ <rutchaphon.far@gmail.com>, 2023.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor interface\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2023-10-24 17:38+0000\n"
-"Last-Translator: Atirut Wattanamongkol <artjang301@gmail.com>\n"
+"PO-Revision-Date: 2023-12-13 14:13+0000\n"
+"Last-Translator: รัชพล คิดการ <rutchaphon.far@gmail.com>\n"
 "Language-Team: Thai <https://hosted.weblate.org/projects/godot-engine/godot/"
 "th/>\n"
 "Language: th\n"
@@ -31,7 +32,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.1.1-dev\n"
+"X-Generator: Weblate 5.3-rc\n"
 
 msgid "Main Thread"
 msgstr "เธรดหลัก"
@@ -131,6 +132,9 @@ msgstr "ปุ่มจอยย้อนกลับ, จอย Sony Select, �
 
 msgid "Guide, Sony PS, Xbox Home"
 msgstr "ปุ่มจอยนำทาง, จอย Sony ปุ่ม PS, จอย Xbox ปุ่ม Home"
+
+msgid "Start, Xbox Menu, Nintendo +"
+msgstr "เริ่ม, หน้าต่าง Xbox, Nintendo พลัส"
 
 msgid "Left Stick, Sony L3, Xbox L/LS"
 msgstr "ปุ่มข้างในจอยสติ๊กซ้าย, จอย Sony L3, จอย Xbox L/LS"
@@ -570,33 +574,6 @@ msgstr "ไม่สามารถแก้ไขโหมดวนซ้ำ (L
 msgid "Can't change loop mode on animation embedded in another scene."
 msgstr "ไม่สามารถแก้ไขโหมดวนซ้ำ (Loop) ของ Animation ที่ฝังอยู่อีกฉากหนึ่งได้"
 
-msgid "Property Track"
-msgstr "Track คุณสมบัติ"
-
-msgid "3D Position Track"
-msgstr "Track ตำแหน่ง 3D"
-
-msgid "3D Rotation Track"
-msgstr "Track การหมุน 3D"
-
-msgid "3D Scale Track"
-msgstr "Track การเปลี่ยนขนาด 3D"
-
-msgid "Blend Shape Track"
-msgstr "Track รูปทรงการ Blend"
-
-msgid "Call Method Track"
-msgstr "Track การเรียกใช้ Method"
-
-msgid "Bezier Curve Track"
-msgstr "Track เส้นโค้ง Bezier"
-
-msgid "Audio Playback Track"
-msgstr "Track การเล่นเสียง"
-
-msgid "Animation Playback Track"
-msgstr "Track การเล่น Animation"
-
 msgid "Animation length (frames)"
 msgstr "ความยาว Animation (เฟรม)"
 
@@ -726,9 +703,6 @@ msgstr "สมการลูกบาศก์ (Angle)"
 msgid "Clamp Loop Interp"
 msgstr "ค่าต่ำสุด/สูงสุดของการวนลูป"
 
-msgid "Insert Key"
-msgstr "เพิ่มคีย์"
-
 msgid "Duplicate Key(s)"
 msgstr "สร้างคีย์ซ้ำอีกอัน"
 
@@ -854,15 +828,6 @@ msgstr "แก้ไข"
 
 msgid "Animation properties."
 msgstr "คุณสมบัติแอนิเมชัน"
-
-msgid "Copy Tracks"
-msgstr "คัดลอกแทร็ก"
-
-msgid "Scale Selection"
-msgstr "ปรับอัตราส่วนเวลาคีย์ที่เลือก"
-
-msgid "Scale From Cursor"
-msgstr "ปรับอัตราส่วนเวลาตามเคอร์เซอร์"
 
 msgid "Duplicate Selection"
 msgstr "ทำซ้ำที่เลือก"
@@ -2066,13 +2031,6 @@ msgid "Unable to load addon script from path: '%s'."
 msgstr "ไม่สามารถโหลดสคริปต์จาก: '%s'"
 
 msgid ""
-"Unable to load addon script from path: '%s' Base type is not EditorPlugin."
-msgstr "ไม่สามารถโหลดสคริปต์จาก: '%s' ไม่ได้สืบทอดจาก EditorPlugin"
-
-msgid "Unable to load addon script from path: '%s' Script is not in tool mode."
-msgstr "ไม่สามารถโหลดสคริปต์จาก: '%s' ไม่ใช่สคริปต์ tool"
-
-msgid ""
 "Scene '%s' was automatically imported, so it can't be modified.\n"
 "To make changes to it, a new inherited scene can be created."
 msgstr ""
@@ -2119,14 +2077,14 @@ msgstr ""
 "'%s' ไม่ใช่ไฟล์ฉาก เลือกใหม่ตอนนี้หรือไม่?\n"
 "สามารถแก้ไขภายหลังที่ \"ตัวเลือกโปรเจกต์\" ใต้หัวข้อ 'application'"
 
+msgid "Default"
+msgstr "ค่าเริ่มต้น"
+
 msgid "Save Layout"
 msgstr "บันทึกเลย์เอาต์"
 
 msgid "Delete Layout"
 msgstr "ลบเลย์เอาต์"
-
-msgid "Default"
-msgstr "ค่าเริ่มต้น"
 
 msgid "Save & Close"
 msgstr "บันทึกและปิด"
@@ -2432,6 +2390,9 @@ msgid ""
 "(%s)."
 msgstr "ทรัพยากรที่เลือก (%s) มีประเทไม่ตรงกับค่าที่ต้องการ (%s)"
 
+msgid "Load..."
+msgstr "โหลด..."
+
 msgid "Make Unique"
 msgstr "ไม่ใช้ร่วมกับวัตถุอื่น"
 
@@ -2444,11 +2405,8 @@ msgstr "แสดงในรูปแบบไฟล์"
 msgid "New %s"
 msgstr "%s ใหม่"
 
-msgid "New Script"
-msgstr "สคริปต์ใหม่"
-
-msgid "Extend Script"
-msgstr "สคริปต์เสริม"
+msgid "New Script..."
+msgstr "สคริปต์ใหม่..."
 
 msgid "Remote Debug"
 msgstr "ดีบักระยะไกล"
@@ -2752,9 +2710,6 @@ msgstr "สร้างโฟลเดอร์..."
 
 msgid "New Scene..."
 msgstr "ฉากใหม่..."
-
-msgid "New Script..."
-msgstr "สคริปต์ใหม่..."
 
 msgid "New Resource..."
 msgstr "ทรัพยากรใหม่..."
@@ -3200,9 +3155,6 @@ msgstr "เพิ่มแอนิเมชัน"
 
 msgid "Add %s"
 msgstr "เพิ่ม %s"
-
-msgid "Load..."
-msgstr "โหลด..."
 
 msgid "Move Node Point"
 msgstr "สร้างจุดโหนด"
@@ -3884,6 +3836,9 @@ msgstr "ปรับขนาด mask สำหรับใส่คีย์"
 
 msgid "Insert keys (based on mask)."
 msgstr "เพิ่มคีย์ (จาก mask)"
+
+msgid "Insert Key"
+msgstr "เพิ่มคีย์"
 
 msgid ""
 "Auto insert keys when objects are translated, rotated or scaled (based on "
@@ -6134,13 +6089,6 @@ msgstr ""
 "ภาษาได้ถูกเปลี่ยนแล้ว\n"
 "การเปลี่ยนแปลงจะมีผลเมื่อเปิดตัวแก้ไขหรือตัวจัดการโปรเจกต์ใหม่"
 
-msgid ""
-"Are you sure to scan %s folders for existing Godot projects?\n"
-"This could take a while."
-msgstr ""
-"ทำการสแกนหาโปรเจกต์ ในโฟลเดอร์ %s หรือไม่?\n"
-"อาจจะใช้เวลาสักครู่"
-
 msgid "New Project"
 msgstr "โปรเจกต์ใหม่"
 
@@ -6425,9 +6373,6 @@ msgstr ""
 
 msgid "Can't paste root node into the same scene."
 msgstr "ไม่สามารถวางโหนดรากในฉากเดียวกัน"
-
-msgid "Reparent to New Node"
-msgstr "หาโหนดแม่ใหม่"
 
 msgid "Make Scene Root"
 msgstr "ตั้งเป็นฉากแม่"

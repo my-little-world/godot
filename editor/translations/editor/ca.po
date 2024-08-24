@@ -20,13 +20,15 @@
 # Jordi Borràs <jborras@centrekepler.com>, 2023.
 # Marc GB <marc.giralt.butjosa@gmail.com>, 2023.
 # Ander Romero <anderromeroaldana@gmail.com>, 2023.
+# Francesc Arpi Roca <francesc.arpi@gmail.com>, 2024.
+# bene toff <benetoffix@gmail.com>, 2024.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor interface\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2023-09-16 17:47+0000\n"
-"Last-Translator: Ander Romero <anderromeroaldana@gmail.com>\n"
+"PO-Revision-Date: 2024-01-16 18:10+0000\n"
+"Last-Translator: bene toff <benetoffix@gmail.com>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/godot-engine/"
 "godot/ca/>\n"
 "Language: ca\n"
@@ -34,7 +36,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.0.2\n"
+"X-Generator: Weblate 5.4-dev\n"
+
+msgid "Main Thread"
+msgstr "Fil principal"
 
 msgid "Unset"
 msgstr "Desactiva"
@@ -580,33 +585,6 @@ msgstr ""
 "No es pot canviar el mode de repetició d'animacions incrustades en una altra "
 "escena."
 
-msgid "Property Track"
-msgstr "Pista de Propietats"
-
-msgid "3D Position Track"
-msgstr "Pista de posició 3D"
-
-msgid "3D Rotation Track"
-msgstr "Pista de rotació 3D"
-
-msgid "3D Scale Track"
-msgstr "Pista de l'escala 3D"
-
-msgid "Blend Shape Track"
-msgstr "Pista de barreja de formes"
-
-msgid "Call Method Track"
-msgstr "Pista de Crida de Mètodes"
-
-msgid "Bezier Curve Track"
-msgstr "Pista de Corbes de Bézier"
-
-msgid "Audio Playback Track"
-msgstr "Pista de reproducció d'Àudio"
-
-msgid "Animation Playback Track"
-msgstr "Pista de reproducció d'Animacions"
-
 msgid "Animation length (frames)"
 msgstr "Longitud de l'animació (fotogrames)"
 
@@ -738,9 +716,6 @@ msgstr "Limita la Interpolació del bucle"
 
 msgid "Wrap Loop Interp"
 msgstr "Embolcalla la interpolació"
-
-msgid "Insert Key"
-msgstr "Insereix una clau"
 
 msgid "Duplicate Key(s)"
 msgstr "Duplica les Claus"
@@ -908,6 +883,9 @@ msgstr ""
 msgid "Animation Add RESET Keys"
 msgstr "Afegeix Claus de RESET a l'animació"
 
+msgid "Bake Animation as Linear Keys"
+msgstr "Precalcula l'animació com a Claus Lineals"
+
 msgid ""
 "This animation belongs to an imported scene, so changes to imported tracks "
 "will not be saved.\n"
@@ -926,6 +904,9 @@ msgstr ""
 "Algunes opcions, com la repetició, poden trobar-s'hi. Per afegir-hi pistes "
 "personalitzades, activeu \"Desa en un fitxer\" i\n"
 "\"Mantingues les pistes personalitzades\"."
+
+msgid "AnimationPlayer is inactive. The playback will not be processed."
+msgstr "AnimationPlayer està inactiu. El playback no serà processat."
 
 msgid "Select an AnimationPlayer node to create and edit animations."
 msgstr "Seleccioneu un node AnimationPlayer per a crear i editar animacions."
@@ -963,18 +944,6 @@ msgstr "Edita"
 msgid "Animation properties."
 msgstr "Propietats de l'Animació."
 
-msgid "Copy Tracks"
-msgstr "Copia les Pistes"
-
-msgid "Scale Selection"
-msgstr "Escala la Selecció"
-
-msgid "Scale From Cursor"
-msgstr "Escala a partir del Cursor"
-
-msgid "Make Easing Selection"
-msgstr "Selecciona el tipus de suavització"
-
 msgid "Duplicate Selection"
 msgstr "Duplica la Selecció"
 
@@ -992,15 +961,6 @@ msgstr "Ves al Pas Anterior"
 
 msgid "Apply Reset"
 msgstr "Aplica reinicialització"
-
-msgid "Bake Animation"
-msgstr "Precalcula l'Animació"
-
-msgid "Optimize Animation (no undo)"
-msgstr "Optimitza l'Animació (no es pot desfer)"
-
-msgid "Clean-Up Animation (no undo)"
-msgstr "Poleix l'Animació (No es pot desfer)"
 
 msgid "Pick a node to animate:"
 msgstr "Tria un node a animar:"
@@ -2308,17 +2268,6 @@ msgstr ""
 "Es desactivarà el complement (addon) a '% s' per a evitar més errors."
 
 msgid ""
-"Unable to load addon script from path: '%s' Base type is not EditorPlugin."
-msgstr ""
-"No es pot carregar l'Script del complement: El tipus base de '%s' no és pas "
-"EditorPlugin."
-
-msgid "Unable to load addon script from path: '%s' Script is not in tool mode."
-msgstr ""
-"No s'ha carregat l'Script d'addon des del camí: L'Script '%s' no és en el "
-"mode d'Eina."
-
-msgid ""
 "Scene '%s' was automatically imported, so it can't be modified.\n"
 "To make changes to it, a new inherited scene can be created."
 msgstr ""
@@ -2369,14 +2318,14 @@ msgstr ""
 "És possible triar-ne una altra més endavant a \"Configuració del Projecte\" "
 "en la categoria \"Aplicació\"."
 
+msgid "Default"
+msgstr "Predeterminat"
+
 msgid "Save Layout"
 msgstr "Desar Disseny"
 
 msgid "Delete Layout"
 msgstr "Elimina Disseny"
-
-msgid "Default"
-msgstr "Predeterminat"
 
 msgid "Save & Close"
 msgstr "Desar i Tancar"
@@ -2517,9 +2466,6 @@ msgstr "Suggerir una Característica"
 
 msgid "Send Docs Feedback"
 msgstr "Enviar suggeriments sobre la Documentació"
-
-msgid "About Godot"
-msgstr "Quant a Godot"
 
 msgid "Support Godot Development"
 msgstr "Contribueix al Desenvolupament de Godot"
@@ -2716,8 +2662,8 @@ msgstr ""
 "El recurs seleccionat (%s) no coincideix amb cap tipus esperat per aquesta "
 "propietat (%s)."
 
-msgid "Quick Load"
-msgstr "Carrega Rapida"
+msgid "Load..."
+msgstr "Carregar..."
 
 msgid "Make Unique"
 msgstr "Fes-lo Únic"
@@ -2731,11 +2677,8 @@ msgstr "Mostrar en el Sistema de Fitxers"
 msgid "New %s"
 msgstr "Nou %s"
 
-msgid "New Script"
-msgstr "Script Nou"
-
-msgid "Extend Script"
-msgstr "Estendre l'script"
+msgid "New Script..."
+msgstr "Script Nou..."
 
 msgid "Write your logic in the _run() method."
 msgstr "Escriu la lògica en el mètode _run()."
@@ -3095,9 +3038,6 @@ msgstr "Nou Directori..."
 
 msgid "New Scene..."
 msgstr "Nova Escena..."
-
-msgid "New Script..."
-msgstr "Script Nou..."
 
 msgid "New Resource..."
 msgstr "Recurs Nou..."
@@ -3533,9 +3473,6 @@ msgstr "Afegeix una Animació"
 
 msgid "Add %s"
 msgstr "Afegeix %s"
-
-msgid "Load..."
-msgstr "Carregar..."
 
 msgid "Move Node Point"
 msgstr "Moure Punt de Node"
@@ -4190,6 +4127,9 @@ msgstr "Mascara d'escala per a inserir claus."
 
 msgid "Insert keys (based on mask)."
 msgstr "Inserir claus (basades en mascara)."
+
+msgid "Insert Key"
+msgstr "Insereix una clau"
 
 msgid "Auto Insert Key"
 msgstr "Inserir Clau Automàticament"
@@ -6008,14 +5948,6 @@ msgstr ""
 "L'idioma ha canviat.\n"
 "La interfície s'actualitzarà després de reiniciar l'editor o el gestor de "
 "projectes."
-
-msgid ""
-"Are you sure to scan %s folders for existing Godot projects?\n"
-"This could take a while."
-msgstr ""
-"Esteu segur que voleu escanejar %s carpetes per als projectes de Godot "
-"existents?\n"
-"Això pot trigar una estona."
 
 msgid "New Project"
 msgstr "Nou Projecte"

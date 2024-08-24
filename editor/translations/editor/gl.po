@@ -9,20 +9,20 @@
 # davidrogel <david.rogel.pernas@icloud.com>, 2021.
 # David Salcas <davisalcas@gmail.com>, 2023.
 # David Fernández Pérez <davidfernandezperez.thezombrex@gmail.com>, 2023.
+# Carlos Cortes Garcia <carlos.cortes.games@gmail.com>, 2023.
 msgid ""
 msgstr ""
 "Project-Id-Version: Godot Engine editor interface\n"
 "Report-Msgid-Bugs-To: https://github.com/godotengine/godot\n"
-"PO-Revision-Date: 2023-10-04 02:10+0000\n"
-"Last-Translator: David Fernández Pérez <davidfernandezperez.thezombrex@gmail."
-"com>\n"
+"PO-Revision-Date: 2023-12-11 21:00+0000\n"
+"Last-Translator: Carlos Cortes Garcia <carlos.cortes.games@gmail.com>\n"
 "Language-Team: Galician <https://hosted.weblate.org/projects/godot-engine/"
 "godot/gl/>\n"
 "Language: gl\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8-bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.3-dev\n"
 
 msgid "Main Thread"
 msgstr "Fío principal"
@@ -198,6 +198,12 @@ msgstr "Xesto de ampliación en (%s) co factor %s"
 msgid "Pan Gesture at (%s) with delta (%s)"
 msgstr "Xesto panorámico en (%s) con delta (%s)"
 
+msgid "MIDI Input on Channel=%s Message=%s"
+msgstr "Entrada MIDI no Canal=%s Mensaxe=%s"
+
+msgid "Input Event with Shortcut=%s"
+msgstr "Evento de Entrada con atallo=%s"
+
 msgid "Accept"
 msgstr "Aceptar"
 
@@ -273,6 +279,9 @@ msgstr "Reducción de sangría"
 msgid "Backspace"
 msgstr "Retroceso"
 
+msgid "Backspace Word"
+msgstr "Retroceder Palabra"
+
 msgid "Backspace all to Left"
 msgstr "Retroceder todo á esquerda"
 
@@ -297,11 +306,35 @@ msgstr "Cursor Dereita"
 msgid "Caret Word Right"
 msgstr "Cursor Palabra Dereita"
 
+msgid "Caret Up"
+msgstr "Cursor Enriba"
+
+msgid "Caret Down"
+msgstr "Cursor Abaixo"
+
+msgid "Caret Line Start"
+msgstr "Comezo da Línea do Cursor"
+
+msgid "Caret Line End"
+msgstr "Cursor Final da Línea"
+
 msgid "Caret Page Up"
 msgstr "Cursor Páxina Superior"
 
+msgid "Caret Page Down"
+msgstr "Cursor Páxina Inferior"
+
 msgid "Caret Document Start"
 msgstr "Cursor Inicio do Documento"
+
+msgid "Caret Document End"
+msgstr "Cursor Final do Documento"
+
+msgid "Caret Add Below"
+msgstr "Cursor Engadir Abaixo"
+
+msgid "Caret Add Above"
+msgstr "Cursor Engadir Enriba"
 
 msgid "Scroll Up"
 msgstr "Desprazamento cara arriba"
@@ -311,6 +344,9 @@ msgstr "Desprazamento cara abaixo"
 
 msgid "Select All"
 msgstr "Seleccionar Todo"
+
+msgid "Select Word Under Caret"
+msgstr "Seleccionar Palabra Debaixo do Cursor"
 
 msgid "Add Selection for Next Occurrence"
 msgstr "Engadir selección para a próxima aparición"
@@ -468,6 +504,18 @@ msgstr "Duplicar Clave(s) Seleccionadas(s)"
 msgid "Delete Selected Key(s)"
 msgstr "Eliminar Clave(s) Seleccionada(s)"
 
+msgid "Make Handles Free"
+msgstr "Liberar os Manipuladores"
+
+msgid "Make Handles Linear"
+msgstr "Facer os Manipuladores Lineais"
+
+msgid "Make Handles Balanced"
+msgstr "Facer os Manipuladores equilibrados"
+
+msgid "Make Handles Mirrored"
+msgstr "Facer os manipuladores simétricos"
+
 msgid "Add Bezier Point"
 msgstr "Engadir Punto Bezier"
 
@@ -479,6 +527,9 @@ msgstr "Duplicar Claves de Animación"
 
 msgid "Animation Delete Keys"
 msgstr "Eliminar Claves de Animación"
+
+msgid "Focus"
+msgstr "Foco"
 
 msgid "Select All Keys"
 msgstr "Seleccionar Todas as Claves"
@@ -524,30 +575,6 @@ msgstr "Cambiar Lonxitude da Animación"
 
 msgid "Change Animation Loop"
 msgstr "Cambiar Ciclo da Animación"
-
-msgid "Property Track"
-msgstr "Pista de Propiedades"
-
-msgid "3D Position Track"
-msgstr "Pista de Posición 3D"
-
-msgid "3D Rotation Track"
-msgstr "Pista de Rotación 3D"
-
-msgid "3D Scale Track"
-msgstr "Pista de Escala 3D"
-
-msgid "Call Method Track"
-msgstr "Pista de Chamadas de Métodos"
-
-msgid "Bezier Curve Track"
-msgstr "Pista de Curva Bezier"
-
-msgid "Audio Playback Track"
-msgstr "Pista de Reprodución de Audio"
-
-msgid "Animation Playback Track"
-msgstr "Pista de Reprodución de Animación"
 
 msgid "Animation length (frames)"
 msgstr "Lonxitude da Animacion (en fotogramas)"
@@ -656,9 +683,6 @@ msgstr "Interpolación de Bucle Recortado"
 
 msgid "Wrap Loop Interp"
 msgstr "Interpolación de Bucle Envolvente"
-
-msgid "Insert Key"
-msgstr "Engadir Chave"
 
 msgid "Duplicate Key(s)"
 msgstr "Duplicar Chave(s)"
@@ -868,18 +892,6 @@ msgstr "Editar"
 msgid "Animation properties."
 msgstr "Propiedades de Animación."
 
-msgid "Copy Tracks"
-msgstr "Copiar Pistas"
-
-msgid "Scale Selection"
-msgstr "Escalar Selección"
-
-msgid "Scale From Cursor"
-msgstr "Escalar desde o Cursor"
-
-msgid "Make Easing Selection"
-msgstr "Fai unha selección simplificada"
-
 msgid "Duplicate Selection"
 msgstr "Duplicar Selección"
 
@@ -897,15 +909,6 @@ msgstr "Ir ao Anterior Paso"
 
 msgid "Apply Reset"
 msgstr "Aplicar Reset"
-
-msgid "Bake Animation"
-msgstr "Bakear Animación"
-
-msgid "Optimize Animation (no undo)"
-msgstr "Optimizar Animación (Non se pode deshacer)"
-
-msgid "Clean-Up Animation (no undo)"
-msgstr "Limpar Animación (Non se pode deshacer)"
 
 msgid "Pick a node to animate:"
 msgstr "Selecciona un nodo para animar:"
@@ -2404,17 +2407,6 @@ msgstr ""
 "Desactive o complemento en '%s' para evitar máis erros."
 
 msgid ""
-"Unable to load addon script from path: '%s' Base type is not EditorPlugin."
-msgstr ""
-"Non se puido cargar o Script da característica adicional (Plugin): O tipo "
-"base de %s non é EditorPlugin."
-
-msgid "Unable to load addon script from path: '%s' Script is not in tool mode."
-msgstr ""
-"Non se puido cargar Script de característica adicional (Addon) na ruta: '%s'. "
-"O script non está en modo ferramenta (tool)."
-
-msgid ""
 "Scene '%s' was automatically imported, so it can't be modified.\n"
 "To make changes to it, a new inherited scene can be created."
 msgstr ""
@@ -2466,14 +2458,14 @@ msgstr ""
 "Podes cambialo despois en \"Configuración do Proxecto\" na categoría "
 "\"aplicación\"."
 
+msgid "Default"
+msgstr "Por Defecto"
+
 msgid "Save Layout"
 msgstr "Gardar Disposición"
 
 msgid "Delete Layout"
 msgstr "Eliminar Dispoción"
-
-msgid "Default"
-msgstr "Por Defecto"
 
 msgid "Save & Close"
 msgstr "Gardar e Pechar"
@@ -2736,6 +2728,9 @@ msgstr ""
 "O recurso seleccionado (%s) non coincide con ningún tipo esperado para esta "
 "propiedade (%s)."
 
+msgid "Load..."
+msgstr "Cargar..."
+
 msgid "Make Unique"
 msgstr "Facer Único"
 
@@ -2748,11 +2743,8 @@ msgstr "Amosar no Sistema de Arquivos"
 msgid "New %s"
 msgstr "Novo %s"
 
-msgid "New Script"
-msgstr "Novo Script"
-
-msgid "Extend Script"
-msgstr "Estender Script"
+msgid "New Script..."
+msgstr "Novo Script..."
 
 msgid ""
 "No runnable export preset found for this platform.\n"
@@ -2966,9 +2958,6 @@ msgstr "Novo Cartafol..."
 
 msgid "New Scene..."
 msgstr "Nova Escena..."
-
-msgid "New Script..."
-msgstr "Novo Script..."
 
 msgid "New Resource..."
 msgstr "Novo Recurso..."
@@ -3345,9 +3334,6 @@ msgstr "Engadir Animación"
 
 msgid "Add %s"
 msgstr "Engadir %s"
-
-msgid "Load..."
-msgstr "Cargar..."
 
 msgid "This type of node can't be used. Only root nodes are allowed."
 msgstr "Non se pode usar este tipo de nodo. Só nodos raíz están permitidos."
@@ -3752,6 +3738,9 @@ msgstr "Encadrar Selección"
 
 msgid "Preview Canvas Scale"
 msgstr "Vista Previa da Escala do Lenzo (Canvas)"
+
+msgid "Insert Key"
+msgstr "Engadir Chave"
 
 msgid ""
 "Auto insert keys when objects are translated, rotated or scaled (based on "
@@ -4906,13 +4895,6 @@ msgstr ""
 "Linguaxe cambiada.\n"
 "A interface actualizarase despois de reiniciar o editor ou administrador de "
 "proxectos."
-
-msgid ""
-"Are you sure to scan %s folders for existing Godot projects?\n"
-"This could take a while."
-msgstr ""
-"Seguro que quere escanear proxectos de Godot en %s cartafois?\n"
-"Esto podería demorarse un tempo."
 
 msgid "New Project"
 msgstr "Novo Proxecto"
