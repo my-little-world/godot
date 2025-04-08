@@ -28,9 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "godot_window.h"
+#import "godot_window.h"
 
-#include "display_server_macos.h"
+#import "display_server_macos.h"
 
 @implementation GodotWindow
 
@@ -65,7 +65,7 @@
 	}
 
 	DisplayServerMacOS::WindowData &wd = ds->get_window(window_id);
-	return !wd.no_focus && !wd.is_popup;
+	return !wd.no_focus;
 }
 
 - (BOOL)canBecomeMainWindow {

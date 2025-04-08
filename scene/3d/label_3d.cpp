@@ -30,10 +30,8 @@
 
 #include "label_3d.h"
 
-#include "core/core_string_names.h"
-#include "scene/main/viewport.h"
+#include "scene/main/window.h"
 #include "scene/resources/theme.h"
-#include "scene/scene_string_names.h"
 #include "scene/theme/theme_db.h"
 
 void Label3D::_bind_methods() {
@@ -88,6 +86,12 @@ void Label3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_autowrap_mode", "autowrap_mode"), &Label3D::set_autowrap_mode);
 	ClassDB::bind_method(D_METHOD("get_autowrap_mode"), &Label3D::get_autowrap_mode);
 
+	ClassDB::bind_method(D_METHOD("set_autowrap_trim_flags", "autowrap_trim_flags"), &Label3D::set_autowrap_trim_flags);
+	ClassDB::bind_method(D_METHOD("get_autowrap_trim_flags"), &Label3D::get_autowrap_trim_flags);
+
+	ClassDB::bind_method(D_METHOD("set_justification_flags", "justification_flags"), &Label3D::set_justification_flags);
+	ClassDB::bind_method(D_METHOD("get_justification_flags"), &Label3D::get_justification_flags);
+
 	ClassDB::bind_method(D_METHOD("set_width", "width"), &Label3D::set_width);
 	ClassDB::bind_method(D_METHOD("get_width"), &Label3D::get_width);
 
@@ -123,10 +127,6 @@ void Label3D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("generate_triangle_mesh"), &Label3D::generate_triangle_mesh);
 
-	ClassDB::bind_method(D_METHOD("_queue_update"), &Label3D::_queue_update);
-	ClassDB::bind_method(D_METHOD("_font_changed"), &Label3D::_font_changed);
-	ClassDB::bind_method(D_METHOD("_im_update"), &Label3D::_im_update);
-
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "pixel_size", PROPERTY_HINT_RANGE, "0.0001,128,0.0001,suffix:m"), "set_pixel_size", "get_pixel_size");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset", PROPERTY_HINT_NONE, "suffix:px"), "set_offset", "get_offset");
 
@@ -157,6 +157,8 @@ void Label3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "uppercase"), "set_uppercase", "is_uppercase");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "line_spacing", PROPERTY_HINT_NONE, "suffix:px"), "set_line_spacing", "get_line_spacing");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "autowrap_mode", PROPERTY_HINT_ENUM, "Off,Arbitrary,Word,Word (Smart)"), "set_autowrap_mode", "get_autowrap_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "autowrap_trim_flags", PROPERTY_HINT_FLAGS, vformat("Trim Spaces After Break:%d,Trim Spaces Before Break:%d", TextServer::BREAK_TRIM_START_EDGE_SPACES, TextServer::BREAK_TRIM_END_EDGE_SPACES)), "set_autowrap_trim_flags", "get_autowrap_trim_flags");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "justification_flags", PROPERTY_HINT_FLAGS, "Kashida Justification:1,Word Justification:2,Justify Only After Last Tab:8,Skip Last Line:32,Skip Last Line With Visible Characters:64,Do Not Skip Single Line:128"), "set_justification_flags", "get_justification_flags");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "width", PROPERTY_HINT_NONE, "suffix:px"), "set_width", "get_width");
 
 	ADD_GROUP("BiDi", "");
@@ -199,17 +201,17 @@ void Label3D::_notification(int p_what) {
 			if (!pending_update) {
 				_im_update();
 			}
-			Viewport *viewport = get_viewport();
-			ERR_FAIL_COND(!viewport);
-			viewport->connect("size_changed", callable_mp(this, &Label3D::_font_changed));
+			Window *window = get_window();
+			ERR_FAIL_NULL(window);
+			window->connect("size_changed", callable_mp(this, &Label3D::_font_changed));
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
-			Viewport *viewport = get_viewport();
-			ERR_FAIL_COND(!viewport);
-			viewport->disconnect("size_changed", callable_mp(this, &Label3D::_font_changed));
+			Window *window = get_window();
+			ERR_FAIL_NULL(window);
+			window->disconnect("size_changed", callable_mp(this, &Label3D::_font_changed));
 		} break;
 		case NOTIFICATION_TRANSLATION_CHANGED: {
-			String new_text = tr(text);
+			String new_text = atr(text);
 			if (new_text == xl_text) {
 				return; // Nothing new.
 			}
@@ -235,7 +237,7 @@ void Label3D::_queue_update() {
 	}
 
 	pending_update = true;
-	call_deferred(SceneStringNames::get_singleton()->_im_update);
+	callable_mp(this, &Label3D::_im_update).call_deferred();
 }
 
 AABB Label3D::get_aabb() const {
@@ -320,35 +322,45 @@ Ref<TriangleMesh> Label3D::generate_triangle_mesh() const {
 		facesw[j] = vtx;
 	}
 
-	triangle_mesh = Ref<TriangleMesh>(memnew(TriangleMesh));
+	triangle_mesh.instantiate();
 	triangle_mesh->create(faces);
 
 	return triangle_mesh;
 }
 
 void Label3D::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset, const Color &p_modulate, int p_priority, int p_outline_size) {
-	for (int j = 0; j < p_glyph.repeat; j++) {
-		Vector2 gl_of;
-		Vector2 gl_sz;
-		Rect2 gl_uv;
-		Size2 texs;
-		RID tex;
+	if (p_glyph.index == 0) {
+		r_offset.x += p_glyph.advance * pixel_size * p_glyph.repeat; // Non visual character, skip.
+		return;
+	}
 
-		if (p_glyph.font_rid != RID()) {
-			tex = TS->font_get_glyph_texture_rid(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index);
-			if (tex != RID()) {
-				gl_of = (TS->font_get_glyph_offset(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index) + Vector2(p_glyph.x_off, p_glyph.y_off)) * pixel_size;
-				gl_sz = TS->font_get_glyph_size(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index) * pixel_size;
-				gl_uv = TS->font_get_glyph_uv_rect(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index);
-				texs = TS->font_get_glyph_texture_size(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index);
-			}
-		} else {
-			gl_sz = TS->get_hex_code_box_size(p_glyph.font_size, p_glyph.index) * pixel_size;
-			gl_of = Vector2(0, -gl_sz.y);
+	Vector2 gl_of;
+	Vector2 gl_sz;
+	Rect2 gl_uv;
+	Size2 texs;
+	RID tex;
+
+	if (p_glyph.font_rid.is_valid()) {
+		tex = TS->font_get_glyph_texture_rid(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index);
+		if (tex.is_valid()) {
+			gl_of = (TS->font_get_glyph_offset(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index) + Vector2(p_glyph.x_off, p_glyph.y_off)) * pixel_size;
+			gl_sz = TS->font_get_glyph_size(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index) * pixel_size;
+			gl_uv = TS->font_get_glyph_uv_rect(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index);
+			texs = TS->font_get_glyph_texture_size(p_glyph.font_rid, Vector2i(p_glyph.font_size, p_outline_size), p_glyph.index);
 		}
+	} else if (((p_glyph.flags & TextServer::GRAPHEME_IS_VIRTUAL) != TextServer::GRAPHEME_IS_VIRTUAL) && ((p_glyph.flags & TextServer::GRAPHEME_IS_EMBEDDED_OBJECT) != TextServer::GRAPHEME_IS_EMBEDDED_OBJECT)) {
+		gl_sz = TS->get_hex_code_box_size(p_glyph.font_size, p_glyph.index) * pixel_size;
+		gl_of = Vector2(0, -gl_sz.y);
+	}
 
-		bool msdf = TS->font_is_multichannel_signed_distance_field(p_glyph.font_rid);
+	if (gl_uv.size.x <= 2 || gl_uv.size.y <= 2) {
+		r_offset.x += p_glyph.advance * pixel_size * p_glyph.repeat; // Nothing to draw.
+		return;
+	}
 
+	bool msdf = TS->font_is_multichannel_signed_distance_field(p_glyph.font_rid);
+
+	for (int j = 0; j < p_glyph.repeat; j++) {
 		SurfaceKey key = SurfaceKey(tex.get_id(), p_priority, p_outline_size);
 		if (!surfaces.has(key)) {
 			SurfaceData surf;
@@ -384,6 +396,7 @@ void Label3D::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset, 
 
 			RS::get_singleton()->material_set_shader(surf.material, shader_rid);
 			RS::get_singleton()->material_set_param(surf.material, "texture_albedo", tex);
+			RS::get_singleton()->material_set_param(surf.material, "albedo_texture_size", texs);
 			if (get_alpha_cut_mode() == ALPHA_CUT_DISABLED) {
 				RS::get_singleton()->material_set_render_priority(surf.material, p_priority);
 			} else {
@@ -413,15 +426,9 @@ void Label3D::_generate_glyph_surfaces(const Glyph &p_glyph, Vector2 &r_offset, 
 			s.mesh_tangents.write[(s.offset * 16) + (i * 4) + 3] = 1.0;
 			s.mesh_colors.write[(s.offset * 4) + i] = p_modulate;
 			s.mesh_uvs.write[(s.offset * 4) + i] = Vector2();
-
-			if (aabb == AABB()) {
-				aabb.position = s.mesh_vertices[(s.offset * 4) + i];
-			} else {
-				aabb.expand_to(s.mesh_vertices[(s.offset * 4) + i]);
-			}
 		}
 
-		if (tex != RID()) {
+		if (tex.is_valid()) {
 			s.mesh_uvs.write[(s.offset * 4) + 3] = Vector2(gl_uv.position.x / texs.x, (gl_uv.position.y + gl_uv.size.y) / texs.y);
 			s.mesh_uvs.write[(s.offset * 4) + 2] = Vector2((gl_uv.position.x + gl_uv.size.x) / texs.x, (gl_uv.position.y + gl_uv.size.y) / texs.y);
 			s.mesh_uvs.write[(s.offset * 4) + 1] = Vector2((gl_uv.position.x + gl_uv.size.x) / texs.x, gl_uv.position.y / texs.y);
@@ -474,9 +481,6 @@ void Label3D::_shape() {
 
 		String txt = (uppercase) ? TS->string_to_upper(xl_text, language) : xl_text;
 		TS->shaped_text_add_string(text_rid, txt, font->get_rids(), font_size, font->get_opentype_features(), language);
-		for (int i = 0; i < TextServer::SPACING_MAX; i++) {
-			TS->shaped_text_set_spacing(text_rid, TextServer::SpacingType(i), font->get_spacing(TextServer::SpacingType(i)));
-		}
 
 		TypedArray<Vector3i> stt;
 		if (st_parser == TextServer::STRUCTURED_TEXT_CUSTOM) {
@@ -493,9 +497,6 @@ void Label3D::_shape() {
 		int spans = TS->shaped_get_span_count(text_rid);
 		for (int i = 0; i < spans; i++) {
 			TS->shaped_set_span_update_font(text_rid, i, font->get_rids(), font_size, font->get_opentype_features());
-		}
-		for (int i = 0; i < TextServer::SPACING_MAX; i++) {
-			TS->shaped_text_set_spacing(text_rid, TextServer::SpacingType(i), font->get_spacing(TextServer::SpacingType(i)));
 		}
 
 		dirty_font = false;
@@ -522,7 +523,7 @@ void Label3D::_shape() {
 			case TextServer::AUTOWRAP_OFF:
 				break;
 		}
-		autowrap_flags = autowrap_flags | TextServer::BREAK_TRIM_EDGE_SPACES;
+		autowrap_flags = autowrap_flags | autowrap_flags_trim;
 
 		PackedInt32Array line_breaks = TS->shaped_text_get_line_breaks(text_rid, width, 0, autowrap_flags);
 		float max_line_w = 0.0;
@@ -533,8 +534,24 @@ void Label3D::_shape() {
 		}
 
 		if (horizontal_alignment == HORIZONTAL_ALIGNMENT_FILL) {
-			for (int i = 0; i < lines_rid.size() - 1; i++) {
-				TS->shaped_text_fit_to_width(lines_rid[i], (width > 0) ? width : max_line_w, TextServer::JUSTIFICATION_WORD_BOUND | TextServer::JUSTIFICATION_KASHIDA);
+			int jst_to_line = lines_rid.size();
+			if (lines_rid.size() == 1 && jst_flags.has_flag(TextServer::JUSTIFICATION_DO_NOT_SKIP_SINGLE_LINE)) {
+				jst_to_line = lines_rid.size();
+			} else {
+				if (jst_flags.has_flag(TextServer::JUSTIFICATION_SKIP_LAST_LINE)) {
+					jst_to_line = lines_rid.size() - 1;
+				}
+				if (jst_flags.has_flag(TextServer::JUSTIFICATION_SKIP_LAST_LINE_WITH_VISIBLE_CHARS)) {
+					for (int i = lines_rid.size() - 1; i >= 0; i--) {
+						if (TS->shaped_text_has_visible_chars(lines_rid[i])) {
+							jst_to_line = i;
+							break;
+						}
+					}
+				}
+			}
+			for (int i = 0; i < jst_to_line; i++) {
+				TS->shaped_text_fit_to_width(lines_rid[i], (width > 0) ? width : max_line_w, jst_flags);
 			}
 		}
 		dirty_lines = false;
@@ -579,6 +596,13 @@ void Label3D::_shape() {
 			} break;
 		}
 		offset.x += lbl_offset.x * pixel_size;
+		if (aabb == AABB()) {
+			aabb.position = Vector3(offset.x, offset.y, 0);
+			aabb.expand_to(Vector3(offset.x + line_width, offset.y - (TS->shaped_text_get_size(lines_rid[i]).y + line_spacing) * pixel_size, 0));
+		} else {
+			aabb.expand_to(Vector3(offset.x, offset.y, 0));
+			aabb.expand_to(Vector3(offset.x + line_width, offset.y - (TS->shaped_text_get_size(lines_rid[i]).y + line_spacing) * pixel_size, 0));
+		}
 		offset.y -= TS->shaped_text_get_ascent(lines_rid[i]) * pixel_size;
 
 		if (outline_modulate.a != 0.0 && outline_size > 0) {
@@ -616,8 +640,12 @@ void Label3D::_shape() {
 }
 
 void Label3D::set_text(const String &p_string) {
+	if (text == p_string) {
+		return;
+	}
+
 	text = p_string;
-	xl_text = tr(p_string);
+	xl_text = atr(p_string);
 	dirty_text = true;
 	_queue_update();
 }
@@ -746,12 +774,12 @@ void Label3D::_font_changed() {
 void Label3D::set_font(const Ref<Font> &p_font) {
 	if (font_override != p_font) {
 		if (font_override.is_valid()) {
-			font_override->disconnect(CoreStringNames::get_singleton()->changed, Callable(this, "_font_changed"));
+			font_override->disconnect_changed(callable_mp(this, &Label3D::_font_changed));
 		}
 		font_override = p_font;
 		dirty_font = true;
 		if (font_override.is_valid()) {
-			font_override->connect(CoreStringNames::get_singleton()->changed, Callable(this, "_font_changed"));
+			font_override->connect_changed(callable_mp(this, &Label3D::_font_changed));
 		}
 		_queue_update();
 	}
@@ -762,8 +790,10 @@ Ref<Font> Label3D::get_font() const {
 }
 
 Ref<Font> Label3D::_get_font_or_default() const {
+	// Similar code taken from `FontVariation::_get_base_font_or_default`.
+
 	if (theme_font.is_valid()) {
-		theme_font->disconnect(CoreStringNames::get_singleton()->changed, Callable(const_cast<Label3D *>(this), "_font_changed"));
+		theme_font->disconnect_changed(callable_mp(const_cast<Label3D *>(this), &Label3D::_font_changed));
 		theme_font.unref();
 	}
 
@@ -771,45 +801,39 @@ Ref<Font> Label3D::_get_font_or_default() const {
 		return font_override;
 	}
 
-	// Check the project-defined Theme resource.
-	if (ThemeDB::get_singleton()->get_project_theme().is_valid()) {
-		List<StringName> theme_types;
-		ThemeDB::get_singleton()->get_project_theme()->get_type_dependencies(get_class_name(), StringName(), &theme_types);
+	const StringName theme_name = SceneStringName(font);
+	Vector<StringName> theme_types;
+	ThemeDB::get_singleton()->get_native_type_dependencies(get_class_name(), theme_types);
+
+	ThemeContext *global_context = ThemeDB::get_singleton()->get_default_theme_context();
+	Vector<Ref<Theme>> themes = global_context->get_themes();
+	if (Engine::get_singleton()->is_editor_hint()) {
+		themes.insert(0, ThemeDB::get_singleton()->get_project_theme());
+	}
+
+	for (const Ref<Theme> &theme : themes) {
+		if (theme.is_null()) {
+			continue;
+		}
 
 		for (const StringName &E : theme_types) {
-			if (ThemeDB::get_singleton()->get_project_theme()->has_theme_item(Theme::DATA_TYPE_FONT, "font", E)) {
-				Ref<Font> f = ThemeDB::get_singleton()->get_project_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", E);
-				if (f.is_valid()) {
-					theme_font = f;
-					theme_font->connect(CoreStringNames::get_singleton()->changed, Callable(const_cast<Label3D *>(this), "_font_changed"));
-				}
-				return f;
+			if (!theme->has_font(theme_name, E)) {
+				continue;
 			}
+
+			Ref<Font> f = theme->get_font(theme_name, E);
+			if (f.is_valid()) {
+				theme_font = f;
+				theme_font->connect_changed(callable_mp(const_cast<Label3D *>(this), &Label3D::_font_changed));
+			}
+			return f;
 		}
 	}
 
-	// Lastly, fall back on the items defined in the default Theme, if they exist.
-	{
-		List<StringName> theme_types;
-		ThemeDB::get_singleton()->get_default_theme()->get_type_dependencies(get_class_name(), StringName(), &theme_types);
-
-		for (const StringName &E : theme_types) {
-			if (ThemeDB::get_singleton()->get_default_theme()->has_theme_item(Theme::DATA_TYPE_FONT, "font", E)) {
-				Ref<Font> f = ThemeDB::get_singleton()->get_default_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", E);
-				if (f.is_valid()) {
-					theme_font = f;
-					theme_font->connect(CoreStringNames::get_singleton()->changed, Callable(const_cast<Label3D *>(this), "_font_changed"));
-				}
-				return f;
-			}
-		}
-	}
-
-	// If they don't exist, use any type to return the default/empty value.
-	Ref<Font> f = ThemeDB::get_singleton()->get_default_theme()->get_theme_item(Theme::DATA_TYPE_FONT, "font", StringName());
+	Ref<Font> f = global_context->get_fallback_theme()->get_font(theme_name, StringName());
 	if (f.is_valid()) {
 		theme_font = f;
-		theme_font->connect(CoreStringNames::get_singleton()->changed, Callable(const_cast<Label3D *>(this), "_font_changed"));
+		theme_font->connect_changed(callable_mp(const_cast<Label3D *>(this), &Label3D::_font_changed));
 	}
 	return f;
 }
@@ -869,6 +893,30 @@ void Label3D::set_autowrap_mode(TextServer::AutowrapMode p_mode) {
 
 TextServer::AutowrapMode Label3D::get_autowrap_mode() const {
 	return autowrap_mode;
+}
+
+void Label3D::set_autowrap_trim_flags(BitField<TextServer::LineBreakFlag> p_flags) {
+	if (autowrap_flags_trim != (p_flags & TextServer::BREAK_TRIM_MASK)) {
+		autowrap_flags_trim = (p_flags & TextServer::BREAK_TRIM_MASK);
+		dirty_lines = true;
+		_queue_update();
+	}
+}
+
+BitField<TextServer::LineBreakFlag> Label3D::get_autowrap_trim_flags() const {
+	return autowrap_flags_trim;
+}
+
+void Label3D::set_justification_flags(BitField<TextServer::JustificationFlag> p_flags) {
+	if (jst_flags != p_flags) {
+		jst_flags = p_flags;
+		dirty_lines = true;
+		_queue_update();
+	}
+}
+
+BitField<TextServer::JustificationFlag> Label3D::get_justification_flags() const {
+	return jst_flags;
 }
 
 void Label3D::set_width(float p_width) {

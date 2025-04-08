@@ -28,14 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #include "core/io/file_access.h"
 #include "core/string/ustring.h"
 #include "core/templates/vector.h"
 
 #include <stdarg.h>
+
+class RegEx;
 
 class Logger {
 protected:
@@ -86,6 +87,8 @@ class RotatedFileLogger : public Logger {
 	void clear_old_backups();
 	void rotate_file();
 
+	Ref<RegEx> strip_ansi_regex;
+
 public:
 	explicit RotatedFileLogger(const String &p_base_path, int p_max_files = 10);
 
@@ -96,7 +99,7 @@ class CompositeLogger : public Logger {
 	Vector<Logger *> loggers;
 
 public:
-	explicit CompositeLogger(Vector<Logger *> p_loggers);
+	explicit CompositeLogger(const Vector<Logger *> &p_loggers);
 
 	virtual void logv(const char *p_format, va_list p_list, bool p_err) override _PRINTF_FORMAT_ATTRIBUTE_2_0;
 	virtual void log_error(const char *p_function, const char *p_file, int p_line, const char *p_code, const char *p_rationale, bool p_editor_notify, ErrorType p_type = ERR_ERROR) override;
@@ -105,5 +108,3 @@ public:
 
 	virtual ~CompositeLogger();
 };
-
-#endif // LOGGER_H

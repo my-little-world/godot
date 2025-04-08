@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef BOX_CONTAINER_H
-#define BOX_CONTAINER_H
+#pragma once
 
 #include "scene/gui/container.h"
 
@@ -55,8 +54,6 @@ private:
 
 protected:
 	bool is_fixed = false;
-
-	virtual void _update_theme_item_cache() override;
 
 	void _notification(int p_what);
 	void _validate_property(PropertyInfo &p_property) const;
@@ -99,5 +96,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(BoxContainer::AlignmentMode);
-
-#endif // BOX_CONTAINER_H

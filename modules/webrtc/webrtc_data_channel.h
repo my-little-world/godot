@@ -28,12 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBRTC_DATA_CHANNEL_H
-#define WEBRTC_DATA_CHANNEL_H
+#pragma once
 
 #include "core/io/packet_peer.h"
-
-#define WRTC_IN_BUF PNAME("network/limits/webrtc/max_channel_in_buffer_kb")
 
 class WebRTCDataChannel : public PacketPeer {
 	GDCLASS(WebRTCDataChannel, PacketPeer);
@@ -81,5 +78,3 @@ public:
 
 VARIANT_ENUM_CAST(WebRTCDataChannel::WriteMode);
 VARIANT_ENUM_CAST(WebRTCDataChannel::ChannelState);
-
-#endif // WEBRTC_DATA_CHANNEL_H

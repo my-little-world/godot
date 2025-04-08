@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IMMEDIATE_MESH_H
-#define IMMEDIATE_MESH_H
+#pragma once
 
 #include "core/templates/local_vector.h"
 #include "scene/resources/mesh.h"
@@ -63,7 +62,7 @@ class ImmediateMesh : public Mesh {
 		Ref<Material> material;
 		bool vertex_2d = false;
 		int array_len = 0;
-		uint32_t format = 0;
+		uint64_t format = 0;
 		AABB aabb;
 	};
 
@@ -114,5 +113,3 @@ public:
 	ImmediateMesh();
 	~ImmediateMesh();
 };
-
-#endif // IMMEDIATE_MESH_H

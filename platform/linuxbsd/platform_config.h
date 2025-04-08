@@ -28,6 +28,8 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
+#pragma once
+
 #ifdef __linux__
 #include <alloca.h>
 #endif
@@ -43,5 +45,3 @@
 #define PTHREAD_BSD_SET_NAME
 #endif
 #endif
-
-#define OPENGL_INCLUDE_H "thirdparty/glad/glad/gl.h"

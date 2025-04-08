@@ -28,14 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SCENE_MULTIPLAYER_H
-#define SCENE_MULTIPLAYER_H
-
-#include "scene/main/multiplayer_api.h"
+#pragma once
 
 #include "scene_cache_interface.h"
 #include "scene_replication_interface.h"
 #include "scene_rpc_interface.h"
+
+#include "scene/main/multiplayer_api.h"
 
 class OfflineMultiplayerPeer : public MultiplayerPeer {
 	GDCLASS(OfflineMultiplayerPeer, MultiplayerPeer);
@@ -52,14 +51,14 @@ public:
 
 	virtual void set_target_peer(int p_peer_id) override {}
 	virtual int get_packet_peer() const override { return 0; }
-	virtual TransferMode get_packet_mode() const override { return TRANSFER_MODE_RELIABLE; };
+	virtual TransferMode get_packet_mode() const override { return TRANSFER_MODE_RELIABLE; }
 	virtual int get_packet_channel() const override { return 0; }
 	virtual void disconnect_peer(int p_peer, bool p_force = false) override {}
 	virtual bool is_server() const override { return true; }
 	virtual void poll() override {}
 	virtual void close() override {}
 	virtual int get_unique_id() const override { return TARGET_PEER_SERVER; }
-	virtual ConnectionStatus get_connection_status() const override { return CONNECTION_CONNECTED; };
+	virtual ConnectionStatus get_connection_status() const override { return CONNECTION_CONNECTED; }
 };
 
 class SceneMultiplayer : public MultiplayerAPI {
@@ -98,7 +97,7 @@ public:
 
 	// This is the mask that will be used to extract the command.
 	enum {
-		CMD_MASK = 7, // 0x7 -> 0b00001111
+		CMD_MASK = 7, // 0x7 -> 0b00000111
 	};
 
 private:
@@ -195,11 +194,12 @@ public:
 	void set_server_relay_enabled(bool p_enabled);
 	bool is_server_relay_enabled() const;
 
-	Ref<SceneCacheInterface> get_path_cache() { return cache; }
-	Ref<SceneReplicationInterface> get_replicator() { return replicator; }
+	void set_max_sync_packet_size(int p_size);
+	int get_max_sync_packet_size() const;
+
+	void set_max_delta_packet_size(int p_size);
+	int get_max_delta_packet_size() const;
 
 	SceneMultiplayer();
 	~SceneMultiplayer();
 };
-
-#endif // SCENE_MULTIPLAYER_H

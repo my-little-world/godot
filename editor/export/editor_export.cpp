@@ -32,12 +32,15 @@
 
 #include "core/config/project_settings.h"
 #include "core/io/config_file.h"
+#include "editor/editor_settings.h"
 
 EditorExport *EditorExport::singleton = nullptr;
 
 void EditorExport::_save() {
 	Ref<ConfigFile> config;
+	Ref<ConfigFile> credentials;
 	config.instantiate();
+	credentials.instantiate();
 	for (int i = 0; i < export_presets.size(); i++) {
 		Ref<EditorExportPreset> preset = export_presets[i];
 		String section = "preset." + itos(i);
@@ -45,6 +48,7 @@ void EditorExport::_save() {
 		config->set_value(section, "name", preset->get_name());
 		config->set_value(section, "platform", preset->get_platform()->get_name());
 		config->set_value(section, "runnable", preset->is_runnable());
+		config->set_value(section, "advanced_options", preset->are_advanced_options_enabled());
 		config->set_value(section, "dedicated_server", preset->is_dedicated_server());
 		config->set_value(section, "custom_features", preset->get_custom_features());
 
@@ -79,20 +83,31 @@ void EditorExport::_save() {
 		config->set_value(section, "include_filter", preset->get_include_filter());
 		config->set_value(section, "exclude_filter", preset->get_exclude_filter());
 		config->set_value(section, "export_path", preset->get_export_path());
+		config->set_value(section, "patches", preset->get_patches());
+
 		config->set_value(section, "encryption_include_filters", preset->get_enc_in_filter());
 		config->set_value(section, "encryption_exclude_filters", preset->get_enc_ex_filter());
+		config->set_value(section, "seed", preset->get_seed());
+
 		config->set_value(section, "encrypt_pck", preset->get_enc_pck());
 		config->set_value(section, "encrypt_directory", preset->get_enc_directory());
-		config->set_value(section, "script_encryption_key", preset->get_script_encryption_key());
+		config->set_value(section, "script_export_mode", preset->get_script_export_mode());
+		credentials->set_value(section, "script_encryption_key", preset->get_script_encryption_key());
 
 		String option_section = "preset." + itos(i) + ".options";
 
-		for (const PropertyInfo &E : preset->get_properties()) {
-			config->set_value(option_section, E.name, preset->get(E.name));
+		for (const KeyValue<StringName, Variant> &E : preset->values) {
+			PropertyInfo *prop = preset->properties.getptr(E.key);
+			if (prop && prop->usage & PROPERTY_USAGE_SECRET) {
+				credentials->set_value(option_section, E.key, E.value);
+			} else {
+				config->set_value(option_section, E.key, E.value);
+			}
 		}
 	}
 
 	config->save("res://export_presets.cfg");
+	credentials->save("res://.godot/export_credentials.cfg");
 }
 
 void EditorExport::save_presets() {
@@ -102,12 +117,28 @@ void EditorExport::save_presets() {
 	save_timer->start();
 }
 
+void EditorExport::emit_presets_runnable_changed() {
+	emit_signal(_export_presets_runnable_updated);
+}
+
 void EditorExport::_bind_methods() {
-	ADD_SIGNAL(MethodInfo("export_presets_updated"));
+	ADD_SIGNAL(MethodInfo(_export_presets_updated));
+	ADD_SIGNAL(MethodInfo(_export_presets_runnable_updated));
 }
 
 void EditorExport::add_export_platform(const Ref<EditorExportPlatform> &p_platform) {
 	export_platforms.push_back(p_platform);
+
+	should_update_presets = true;
+	should_reload_presets = true;
+}
+
+void EditorExport::remove_export_platform(const Ref<EditorExportPlatform> &p_platform) {
+	export_platforms.erase(p_platform);
+	p_platform->cleanup();
+
+	should_update_presets = true;
+	should_reload_presets = true;
 }
 
 int EditorExport::get_export_platform_count() {
@@ -126,26 +157,7 @@ void EditorExport::add_export_preset(const Ref<EditorExportPreset> &p_preset, in
 	} else {
 		export_presets.insert(p_at_pos, p_preset);
 	}
-}
-
-String EditorExportPlatform::test_etc2() const {
-	const bool etc2_supported = GLOBAL_GET("rendering/textures/vram_compression/import_etc2_astc");
-
-	if (!etc2_supported) {
-		return TTR("Target platform requires 'ETC2/ASTC' texture compression. Enable 'Import ETC2 ASTC' in Project Settings.");
-	}
-
-	return String();
-}
-
-String EditorExportPlatform::test_bc() const {
-	const bool bc_supported = GLOBAL_GET("rendering/textures/vram_compression/import_s3tc_bptc");
-
-	if (!bc_supported) {
-		return TTR("Target platform requires 'S3TC/BPTC' texture compression. Enable 'Import S3TC BPTC' in Project Settings.");
-	}
-
-	return String();
+	emit_presets_runnable_changed();
 }
 
 int EditorExport::get_export_preset_count() const {
@@ -160,16 +172,19 @@ Ref<EditorExportPreset> EditorExport::get_export_preset(int p_idx) {
 void EditorExport::remove_export_preset(int p_idx) {
 	export_presets.remove_at(p_idx);
 	save_presets();
+	emit_presets_runnable_changed();
 }
 
 void EditorExport::add_export_plugin(const Ref<EditorExportPlugin> &p_plugin) {
 	if (!export_plugins.has(p_plugin)) {
 		export_plugins.push_back(p_plugin);
+		should_update_presets = true;
 	}
 }
 
 void EditorExport::remove_export_plugin(const Ref<EditorExportPlugin> &p_plugin) {
 	export_plugins.erase(p_plugin);
+	should_update_presets = true;
 }
 
 Vector<Ref<EditorExportPlugin>> EditorExport::get_export_plugins() {
@@ -191,6 +206,12 @@ void EditorExport::_notification(int p_what) {
 				export_platforms.write[i]->cleanup();
 			}
 		} break;
+
+		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
+			for (int i = 0; i < export_platforms.size(); i++) {
+				export_platforms.write[i]->notification(p_what);
+			}
+		} break;
 	}
 }
 
@@ -199,6 +220,13 @@ void EditorExport::load_config() {
 	config.instantiate();
 	Error err = config->load("res://export_presets.cfg");
 	if (err != OK) {
+		return;
+	}
+
+	Ref<ConfigFile> credentials;
+	credentials.instantiate();
+	err = credentials->load("res://.godot/export_credentials.cfg");
+	if (!(err == OK || err == ERR_FILE_NOT_FOUND)) {
 		return;
 	}
 
@@ -212,6 +240,12 @@ void EditorExport::load_config() {
 		}
 
 		String platform = config->get_value(section, "platform");
+#ifndef DISABLE_DEPRECATED
+		// Compatibility with Linux platform before 4.3.
+		if (platform == "Linux/X11") {
+			platform = "Linux";
+		}
+#endif
 
 		Ref<EditorExportPreset> preset;
 
@@ -222,12 +256,13 @@ void EditorExport::load_config() {
 			}
 		}
 
-		if (!preset.is_valid()) {
+		if (preset.is_null()) {
 			index++;
-			ERR_CONTINUE(!preset.is_valid());
+			continue; // Unknown platform, skip without error (platform might be loaded later).
 		}
 
 		preset->set_name(config->get_value(section, "name"));
+		preset->set_advanced_options_enabled(config->get_value(section, "advanced_options", false));
 		preset->set_runnable(config->get_value(section, "runnable"));
 		preset->set_dedicated_server(config->get_value(section, "dedicated_server", false));
 
@@ -271,7 +306,12 @@ void EditorExport::load_config() {
 		preset->set_include_filter(config->get_value(section, "include_filter"));
 		preset->set_exclude_filter(config->get_value(section, "exclude_filter"));
 		preset->set_export_path(config->get_value(section, "export_path", ""));
+		preset->set_script_export_mode(config->get_value(section, "script_export_mode", EditorExportPreset::MODE_SCRIPT_BINARY_TOKENS_COMPRESSED));
+		preset->set_patches(config->get_value(section, "patches", Vector<String>()));
 
+		if (config->has_section_key(section, "seed")) {
+			preset->set_seed(config->get_value(section, "seed"));
+		}
 		if (config->has_section_key(section, "encrypt_pck")) {
 			preset->set_enc_pck(config->get_value(section, "encrypt_pck"));
 		}
@@ -284,20 +324,31 @@ void EditorExport::load_config() {
 		if (config->has_section_key(section, "encryption_exclude_filters")) {
 			preset->set_enc_ex_filter(config->get_value(section, "encryption_exclude_filters"));
 		}
-		if (config->has_section_key(section, "script_encryption_key")) {
-			preset->set_script_encryption_key(config->get_value(section, "script_encryption_key"));
+		if (credentials->has_section_key(section, "script_encryption_key")) {
+			preset->set_script_encryption_key(credentials->get_value(section, "script_encryption_key"));
 		}
 
 		String option_section = "preset." + itos(index) + ".options";
 
 		List<String> options;
-
 		config->get_section_keys(option_section, &options);
 
 		for (const String &E : options) {
 			Variant value = config->get_value(option_section, E);
-
 			preset->set(E, value);
+		}
+
+		if (credentials->has_section(option_section)) {
+			options.clear();
+			credentials->get_section_keys(option_section, &options);
+
+			for (const String &E : options) {
+				// Drop values for secret properties that no longer exist, or during the next save they would end up in the regular config file.
+				if (preset->get_properties().has(E)) {
+					Variant value = credentials->get_value(option_section, E);
+					preset->set(E, value);
+				}
+			}
 		}
 
 		add_export_preset(preset);
@@ -310,10 +361,17 @@ void EditorExport::load_config() {
 void EditorExport::update_export_presets() {
 	HashMap<StringName, List<EditorExportPlatform::ExportOption>> platform_options;
 
+	if (should_reload_presets) {
+		should_reload_presets = false;
+		export_presets.clear();
+		load_config();
+	}
+
 	for (int i = 0; i < export_platforms.size(); i++) {
 		Ref<EditorExportPlatform> platform = export_platforms[i];
 
-		bool should_update = platform->should_update_export_options();
+		bool should_update = should_update_presets;
+		should_update |= platform->should_update_export_options();
 		for (int j = 0; j < export_plugins.size(); j++) {
 			should_update |= export_plugins.write[j]->_should_update_export_options(platform);
 		}
@@ -323,12 +381,13 @@ void EditorExport::update_export_presets() {
 			platform->get_export_options(&options);
 
 			for (int j = 0; j < export_plugins.size(); j++) {
-				export_plugins.write[j]->_get_export_options(platform, &options);
+				export_plugins[j]->_get_export_options(platform, &options);
 			}
 
 			platform_options[platform->get_name()] = options;
 		}
 	}
+	should_update_presets = false;
 
 	bool export_presets_updated = false;
 	for (int i = 0; i < export_presets.size(); i++) {
@@ -336,22 +395,27 @@ void EditorExport::update_export_presets() {
 		if (platform_options.has(preset->get_platform()->get_name())) {
 			export_presets_updated = true;
 
+			bool update_value_overrides = false;
 			List<EditorExportPlatform::ExportOption> options = platform_options[preset->get_platform()->get_name()];
 
-			// Copy the previous preset values
-			HashMap<StringName, Variant> previous_values = preset->values;
-
-			// Clear the preset properties and values prior to reloading
+			// Clear the preset properties prior to reloading, keep the values to preserve options from plugins that may be currently disabled.
 			preset->properties.clear();
-			preset->values.clear();
 			preset->update_visibility.clear();
 
 			for (const EditorExportPlatform::ExportOption &E : options) {
-				preset->properties.push_back(E.option);
-
 				StringName option_name = E.option.name;
-				preset->values[option_name] = previous_values.has(option_name) ? previous_values[option_name] : E.default_value;
+				preset->properties[option_name] = E.option;
+				if (!preset->has(option_name)) {
+					preset->values[option_name] = E.default_value;
+				}
 				preset->update_visibility[option_name] = E.update_visibility;
+				if (E.update_visibility) {
+					update_value_overrides = true;
+				}
+			}
+
+			if (update_value_overrides) {
+				preset->update_value_overrides();
 			}
 		}
 	}
@@ -372,6 +436,10 @@ bool EditorExport::poll_export_platforms() {
 	return changed;
 }
 
+void EditorExport::connect_presets_runnable_updated(const Callable &p_target) {
+	connect(_export_presets_runnable_updated, p_target);
+}
+
 EditorExport::EditorExport() {
 	save_timer = memnew(Timer);
 	add_child(save_timer);
@@ -379,11 +447,9 @@ EditorExport::EditorExport() {
 	save_timer->set_one_shot(true);
 	save_timer->connect("timeout", callable_mp(this, &EditorExport::_save));
 
-	_export_presets_updated = "export_presets_updated";
+	_export_presets_updated = StringName("export_presets_updated", true);
+	_export_presets_runnable_updated = StringName("export_presets_runnable_updated", true);
 
 	singleton = this;
 	set_process(true);
-}
-
-EditorExport::~EditorExport() {
 }

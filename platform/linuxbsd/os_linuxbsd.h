@@ -28,16 +28,16 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OS_LINUXBSD_H
-#define OS_LINUXBSD_H
+#pragma once
+
+#include "crash_handler_linuxbsd.h"
+#include "joypad_linux.h"
 
 #include "core/input/input.h"
-#include "crash_handler_linuxbsd.h"
 #include "drivers/alsa/audio_driver_alsa.h"
 #include "drivers/alsamidi/midi_driver_alsamidi.h"
 #include "drivers/pulseaudio/audio_driver_pulseaudio.h"
 #include "drivers/unix/os_unix.h"
-#include "joypad_linux.h"
 #include "servers/audio_server.h"
 
 #ifdef FONTCONFIG_ENABLED
@@ -96,6 +96,7 @@ protected:
 	virtual void set_main_loop(MainLoop *p_main_loop) override;
 
 public:
+	virtual String get_identifier() const override;
 	virtual String get_name() const override;
 	virtual String get_distribution_name() const override;
 	virtual String get_version() const override;
@@ -116,10 +117,12 @@ public:
 
 	virtual String get_system_dir(SystemDir p_dir, bool p_shared_storage = true) const override;
 
-	virtual Error shell_open(String p_uri) override;
+	virtual Error shell_open(const String &p_uri) override;
 
 	virtual String get_unique_id() const override;
 	virtual String get_processor_name() const override;
+
+	virtual bool is_sandboxed() const override;
 
 	virtual void alert(const String &p_alert, const String &p_title = "ALERT!") override;
 
@@ -132,8 +135,11 @@ public:
 
 	virtual Error move_to_trash(const String &p_path) override;
 
+	virtual String get_system_ca_certificates() override;
+
+	virtual bool _test_create_rendering_device_and_gl(const String &p_display_driver) const override;
+	virtual bool _test_create_rendering_device(const String &p_display_driver) const override;
+
 	OS_LinuxBSD();
 	~OS_LinuxBSD();
 };
-
-#endif // OS_LINUXBSD_H

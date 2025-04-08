@@ -28,12 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DIR_ACCESS_JANDROID_H
-#define DIR_ACCESS_JANDROID_H
+#pragma once
+
+#include "java_godot_lib_jni.h"
 
 #include "core/io/dir_access.h"
 #include "drivers/unix/dir_access_unix.h"
-#include "java_godot_lib_jni.h"
+
 #include <stdio.h>
 
 /// Android implementation of the DirAccess interface used to provide access to
@@ -75,18 +76,19 @@ public:
 	virtual bool dir_exists(String p_dir) override;
 
 	virtual Error make_dir(String p_dir) override;
-	virtual Error make_dir_recursive(String p_dir) override;
+	virtual Error make_dir_recursive(const String &p_dir) override;
 
 	virtual Error rename(String p_from, String p_to) override;
 	virtual Error remove(String p_name) override;
 
 	virtual bool is_link(String p_file) override { return false; }
 	virtual String read_link(String p_file) override { return p_file; }
-	virtual Error create_link(String p_source, String p_target) override { return FAILED; }
+	virtual Error create_link(String p_source, String p_target) override { return ERR_UNAVAILABLE; }
 
 	virtual uint64_t get_space_left() override;
 
 	static void setup(jobject p_dir_access_handler);
+	static void terminate();
 
 	DirAccessJAndroid();
 	~DirAccessJAndroid();
@@ -101,5 +103,3 @@ private:
 	void dir_close(int p_id);
 	String get_absolute_path(String p_path);
 };
-
-#endif // DIR_ACCESS_JANDROID_H

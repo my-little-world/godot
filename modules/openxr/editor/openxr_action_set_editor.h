@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_ACTION_SET_EDITOR_H
-#define OPENXR_ACTION_SET_EDITOR_H
+#pragma once
 
 #include "../action_map/openxr_action_map.h"
 #include "../action_map/openxr_action_set.h"
 #include "openxr_action_editor.h"
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/line_edit.h"
@@ -86,12 +86,10 @@ protected:
 	void _do_remove_action_editor(OpenXRActionEditor *p_action_editor);
 
 public:
-	Ref<OpenXRActionSet> get_action_set() { return action_set; };
+	Ref<OpenXRActionSet> get_action_set() { return action_set; }
 	void set_focus_on_entry();
 
 	void remove_all_actions();
 
 	OpenXRActionSetEditor(Ref<OpenXRActionMap> p_action_map, Ref<OpenXRActionSet> p_action_set);
 };
-
-#endif // OPENXR_ACTION_SET_EDITOR_H

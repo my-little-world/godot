@@ -76,6 +76,7 @@ Error StreamPeerGZIP::start_decompression(bool p_is_deflate, int buffer_size) {
 
 Error StreamPeerGZIP::_start(bool p_compress, bool p_is_deflate, int buffer_size) {
 	ERR_FAIL_COND_V(ctx != nullptr, ERR_ALREADY_IN_USE);
+	ERR_FAIL_COND_V_MSG(buffer_size <= 0, ERR_INVALID_PARAMETER, "Invalid buffer size. It should be a positive integer.");
 	clear();
 	compressing = p_compress;
 	rb.resize(nearest_shift(buffer_size - 1));
@@ -102,7 +103,7 @@ Error StreamPeerGZIP::_start(bool p_compress, bool p_is_deflate, int buffer_size
 }
 
 Error StreamPeerGZIP::_process(uint8_t *p_dst, int p_dst_size, const uint8_t *p_src, int p_src_size, int &r_consumed, int &r_out, bool p_close) {
-	ERR_FAIL_COND_V(!ctx, ERR_UNCONFIGURED);
+	ERR_FAIL_NULL_V(ctx, ERR_UNCONFIGURED);
 	z_stream &strm = *(z_stream *)ctx;
 	strm.avail_in = p_src_size;
 	strm.avail_out = p_dst_size;
@@ -132,7 +133,7 @@ Error StreamPeerGZIP::put_data(const uint8_t *p_data, int p_bytes) {
 }
 
 Error StreamPeerGZIP::put_partial_data(const uint8_t *p_data, int p_bytes, int &r_sent) {
-	ERR_FAIL_COND_V(!ctx, ERR_UNCONFIGURED);
+	ERR_FAIL_NULL_V(ctx, ERR_UNCONFIGURED);
 	ERR_FAIL_COND_V(p_bytes < 0, ERR_INVALID_PARAMETER);
 
 	// Ensure we have enough space in temporary buffer.
@@ -194,12 +195,12 @@ int StreamPeerGZIP::get_available_bytes() const {
 Error StreamPeerGZIP::finish() {
 	ERR_FAIL_COND_V(!ctx || !compressing, ERR_UNAVAILABLE);
 	// Ensure we have enough space in temporary buffer.
-	if (buffer.size() < 1024) {
-		buffer.resize(1024); // 1024 should be more than enough.
+	if (buffer.size() < get_available_bytes()) {
+		buffer.resize(get_available_bytes()); // get_available_bytes() is what we can store in RingBuffer.
 	}
 	int consumed = 0;
 	int to_write = 0;
-	Error err = _process(buffer.ptrw(), 1024, nullptr, 0, consumed, to_write, true); // compress
+	Error err = _process(buffer.ptrw(), buffer.size(), nullptr, 0, consumed, to_write, true); // compress
 	if (err != OK) {
 		return err;
 	}

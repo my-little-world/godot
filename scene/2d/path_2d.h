@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PATH_2D_H
-#define PATH_2D_H
+#pragma once
 
 #include "scene/2d/node_2d.h"
 #include "scene/resources/curve.h"
@@ -48,7 +47,7 @@ protected:
 	static void _bind_methods();
 
 public:
-#ifdef TOOLS_ENABLED
+#ifdef DEBUG_ENABLED
 	virtual Rect2 _edit_get_rect() const override;
 	virtual bool _edit_use_rect() const override;
 	virtual bool _edit_is_selected_on_click(const Point2 &p_point, double p_tolerance) const override;
@@ -70,7 +69,6 @@ private:
 	Timer *update_timer = nullptr;
 	real_t h_offset = 0.0;
 	real_t v_offset = 0.0;
-	real_t lookahead = 4.0;
 	bool cubic = true;
 	bool loop = true;
 	bool rotates = true;
@@ -98,21 +96,16 @@ public:
 	void set_progress_ratio(real_t p_ratio);
 	real_t get_progress_ratio() const;
 
-	void set_lookahead(real_t p_lookahead);
-	real_t get_lookahead() const;
-
 	void set_loop(bool p_loop);
 	bool has_loop() const;
 
-	void set_rotates(bool p_rotates);
-	bool is_rotating() const;
+	void set_rotation_enabled(bool p_enabled);
+	bool is_rotation_enabled() const;
 
-	void set_cubic_interpolation(bool p_enable);
-	bool get_cubic_interpolation() const;
+	void set_cubic_interpolation_enabled(bool p_enabled);
+	bool is_cubic_interpolation_enabled() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 
 	PathFollow2D() {}
 };
-
-#endif // PATH_2D_H

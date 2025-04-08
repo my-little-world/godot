@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SLIDER_H
-#define SLIDER_H
+#pragma once
 
 #include "scene/gui/range.h"
 
@@ -38,7 +37,8 @@ class Slider : public Range {
 
 	struct Grab {
 		int pos = 0;
-		double uvalue = 0.0;
+		double uvalue = 0.0; // Value at `pos`.
+		double value_before_dragging = 0.0;
 		bool active = false;
 	} grab;
 
@@ -48,6 +48,10 @@ class Slider : public Range {
 	double custom_step = -1.0;
 	bool editable = true;
 	bool scrollable = true;
+
+	const float DEFAULT_GAMEPAD_EVENT_DELAY_MS = 0.5;
+	const float GAMEPAD_EVENT_REPEAT_RATE_MS = 1.0 / 20;
+	float gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
 
 	struct ThemeCache {
 		Ref<StyleBox> slider_style;
@@ -67,7 +71,6 @@ protected:
 	bool ticks_on_borders = false;
 
 	virtual void gui_input(const Ref<InputEvent> &p_event) override;
-	virtual void _update_theme_item_cache() override;
 	void _notification(int p_what);
 	static void _bind_methods();
 
@@ -107,5 +110,3 @@ public:
 	VSlider() :
 			Slider(VERTICAL) { set_h_size_flags(0); }
 };
-
-#endif // SLIDER_H

@@ -30,7 +30,7 @@
 
 #include "visual_shader_particle_nodes.h"
 
-#include "core/core_string_names.h"
+#include "scene/resources/image_texture.h"
 
 // VisualShaderNodeParticleEmitter
 
@@ -40,9 +40,9 @@ int VisualShaderNodeParticleEmitter::get_output_port_count() const {
 
 VisualShaderNodeParticleEmitter::PortType VisualShaderNodeParticleEmitter::get_output_port_type(int p_port) const {
 	if (mode_2d) {
-		return PORT_TYPE_VECTOR_2D;
+		return p_port == 0 ? PORT_TYPE_VECTOR_2D : PORT_TYPE_SCALAR;
 	}
-	return PORT_TYPE_VECTOR_3D;
+	return p_port == 0 ? PORT_TYPE_VECTOR_3D : PORT_TYPE_SCALAR;
 }
 
 String VisualShaderNodeParticleEmitter::get_output_port_name(int p_port) const {
@@ -461,7 +461,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Vector2> 
 	Ref<Image> image;
 	image.instantiate();
 
-	if (p_array.size() == 0) {
+	if (p_array.is_empty()) {
 		image->initialize_data(1, 1, false, Image::Format::FORMAT_RGBF);
 	} else {
 		image->initialize_data(p_array.size(), 1, false, Image::Format::FORMAT_RGBF);
@@ -471,7 +471,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Vector2> 
 		Vector2 v = p_array[i];
 		image->set_pixel(i, 0, Color(v.x, v.y, 0));
 	}
-	if (r_texture->get_width() != p_array.size() || p_array.size() == 0) {
+	if (r_texture->get_width() != p_array.size() || p_array.is_empty()) {
 		r_texture->set_image(image);
 	} else {
 		r_texture->update(image);
@@ -482,7 +482,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Vector3> 
 	Ref<Image> image;
 	image.instantiate();
 
-	if (p_array.size() == 0) {
+	if (p_array.is_empty()) {
 		image->initialize_data(1, 1, false, Image::Format::FORMAT_RGBF);
 	} else {
 		image->initialize_data(p_array.size(), 1, false, Image::Format::FORMAT_RGBF);
@@ -492,7 +492,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Vector3> 
 		Vector3 v = p_array[i];
 		image->set_pixel(i, 0, Color(v.x, v.y, v.z));
 	}
-	if (r_texture->get_width() != p_array.size() || p_array.size() == 0) {
+	if (r_texture->get_width() != p_array.size() || p_array.is_empty()) {
 		r_texture->set_image(image);
 	} else {
 		r_texture->update(image);
@@ -503,7 +503,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Color> &p
 	Ref<Image> image;
 	image.instantiate();
 
-	if (p_array.size() == 0) {
+	if (p_array.is_empty()) {
 		image->initialize_data(1, 1, false, Image::Format::FORMAT_RGBA8);
 	} else {
 		image->initialize_data(p_array.size(), 1, false, Image::Format::FORMAT_RGBA8);
@@ -512,7 +512,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Color> &p
 	for (int i = 0; i < p_array.size(); i++) {
 		image->set_pixel(i, 0, p_array[i]);
 	}
-	if (r_texture->get_width() != p_array.size() || p_array.size() == 0) {
+	if (r_texture->get_width() != p_array.size() || p_array.is_empty()) {
 		r_texture->set_image(image);
 	} else {
 		r_texture->update(image);
@@ -520,7 +520,7 @@ void VisualShaderNodeParticleMeshEmitter::_update_texture(const Vector<Color> &p
 }
 
 void VisualShaderNodeParticleMeshEmitter::_update_textures() {
-	if (!mesh.is_valid()) {
+	if (mesh.is_null()) {
 		return;
 	}
 
@@ -637,21 +637,13 @@ void VisualShaderNodeParticleMeshEmitter::set_mesh(Ref<Mesh> p_mesh) {
 	}
 
 	if (mesh.is_valid()) {
-		Callable callable = callable_mp(this, &VisualShaderNodeParticleMeshEmitter::_update_textures);
-
-		if (mesh->is_connected(CoreStringNames::get_singleton()->changed, callable)) {
-			mesh->disconnect(CoreStringNames::get_singleton()->changed, callable);
-		}
+		mesh->disconnect_changed(callable_mp(this, &VisualShaderNodeParticleMeshEmitter::_update_textures));
 	}
 
 	mesh = p_mesh;
 
 	if (mesh.is_valid()) {
-		Callable callable = callable_mp(this, &VisualShaderNodeParticleMeshEmitter::_update_textures);
-
-		if (!mesh->is_connected(CoreStringNames::get_singleton()->changed, callable)) {
-			mesh->connect(CoreStringNames::get_singleton()->changed, callable);
-		}
+		mesh->connect_changed(callable_mp(this, &VisualShaderNodeParticleMeshEmitter::_update_textures));
 	}
 
 	emit_changed();
@@ -732,7 +724,7 @@ void VisualShaderNodeParticleMeshEmitter::_bind_methods() {
 }
 
 VisualShaderNodeParticleMeshEmitter::VisualShaderNodeParticleMeshEmitter() {
-	connect(CoreStringNames::get_singleton()->changed, callable_mp(this, &VisualShaderNodeParticleMeshEmitter::_update_textures));
+	connect_changed(callable_mp(this, &VisualShaderNodeParticleMeshEmitter::_update_textures));
 
 	position_texture.instantiate();
 	normal_texture.instantiate();
@@ -793,7 +785,7 @@ int VisualShaderNodeParticleMultiplyByAxisAngle::get_output_port_count() const {
 }
 
 VisualShaderNodeParticleMultiplyByAxisAngle::PortType VisualShaderNodeParticleMultiplyByAxisAngle::get_output_port_type(int p_port) const {
-	return PORT_TYPE_VECTOR_3D;
+	return p_port == 0 ? PORT_TYPE_VECTOR_3D : PORT_TYPE_SCALAR;
 }
 
 String VisualShaderNodeParticleMultiplyByAxisAngle::get_output_port_name(int p_port) const {
@@ -867,7 +859,7 @@ int VisualShaderNodeParticleConeVelocity::get_output_port_count() const {
 }
 
 VisualShaderNodeParticleConeVelocity::PortType VisualShaderNodeParticleConeVelocity::get_output_port_type(int p_port) const {
-	return PORT_TYPE_VECTOR_3D;
+	return p_port == 0 ? PORT_TYPE_VECTOR_3D : PORT_TYPE_SCALAR;
 }
 
 String VisualShaderNodeParticleConeVelocity::get_output_port_name(int p_port) const {
@@ -937,11 +929,11 @@ int VisualShaderNodeParticleRandomness::get_output_port_count() const {
 VisualShaderNodeParticleRandomness::PortType VisualShaderNodeParticleRandomness::get_output_port_type(int p_port) const {
 	switch (op_type) {
 		case OP_TYPE_VECTOR_2D:
-			return PORT_TYPE_VECTOR_2D;
+			return p_port == 0 ? PORT_TYPE_VECTOR_2D : PORT_TYPE_SCALAR;
 		case OP_TYPE_VECTOR_3D:
-			return PORT_TYPE_VECTOR_3D;
+			return p_port == 0 ? PORT_TYPE_VECTOR_3D : PORT_TYPE_SCALAR;
 		case OP_TYPE_VECTOR_4D:
-			return PORT_TYPE_VECTOR_4D;
+			return p_port == 0 ? PORT_TYPE_VECTOR_4D : PORT_TYPE_SCALAR;
 		default:
 			break;
 	}
@@ -1087,7 +1079,7 @@ int VisualShaderNodeParticleAccelerator::get_output_port_count() const {
 }
 
 VisualShaderNodeParticleAccelerator::PortType VisualShaderNodeParticleAccelerator::get_output_port_type(int p_port) const {
-	return PORT_TYPE_VECTOR_3D;
+	return p_port == 0 ? PORT_TYPE_VECTOR_3D : PORT_TYPE_SCALAR;
 }
 
 String VisualShaderNodeParticleAccelerator::get_output_port_name(int p_port) const {
@@ -1649,11 +1641,11 @@ String VisualShaderNodeParticleEmit::generate_code(Shader::Mode p_mode, VisualSh
 
 	String flags_str;
 
-	for (int i = 0; i < flags_arr.size(); i++) {
-		if (i > 0) {
+	for (List<String>::ConstIterator itr = flags_arr.begin(); itr != flags_arr.end(); ++itr) {
+		if (itr != flags_arr.begin()) {
 			flags_str += "|";
 		}
-		flags_str += flags_arr[i];
+		flags_str += *itr;
 	}
 
 	if (flags_str.is_empty()) {

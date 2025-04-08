@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // ----------------------------------------------------------------------------
-// Copyright 2020-2023 Arm Limited
+// Copyright 2020-2024 Arm Limited
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -42,6 +42,14 @@
  *       contexts for multi-threaded use, and invoke astcenc_compress/decompress() once per thread
  *       for faster processing. The caller is responsible for creating the worker threads, and
  *       synchronizing between images.
+ *
+ * Extended instruction set support
+ * ================================
+ *
+ * This library supports use of extended instruction sets, such as SSE4.1 and AVX2. These are
+ * enabled at compile time when building the library. There is no runtime checking in the core
+ * library that the instruction sets used are actually available. Checking compatibility is the
+ * responsibility of the calling code.
  *
  * Threading
  * =========
@@ -191,8 +199,6 @@ enum astcenc_error {
 	ASTCENC_ERR_OUT_OF_MEM,
 	/** @brief The call failed due to the build using fast math. */
 	ASTCENC_ERR_BAD_CPU_FLOAT,
-	/** @brief The call failed due to the build using an unsupported ISA. */
-	ASTCENC_ERR_BAD_CPU_ISA,
 	/** @brief The call failed due to an out-of-spec parameter. */
 	ASTCENC_ERR_BAD_PARAM,
 	/** @brief The call failed due to an out-of-spec block size. */
@@ -209,6 +215,8 @@ enum astcenc_error {
 	ASTCENC_ERR_BAD_CONTEXT,
 	/** @brief The call failed due to unimplemented functionality. */
 	ASTCENC_ERR_NOT_IMPLEMENTED,
+	/** @brief The call failed due to an out-of-spec decode mode flag set. */
+	ASTCENC_ERR_BAD_DECODE_MODE,
 #if defined(ASTCENC_DIAGNOSTICS)
 	/** @brief The call failed due to an issue with diagnostic tracing. */
 	ASTCENC_ERR_DTRACE_FAILURE,
@@ -297,6 +305,11 @@ enum astcenc_type
 };
 
 /**
+ * @brief Function pointer type for compression progress reporting callback.
+ */
+extern "C" typedef void (*astcenc_progress_callback)(float);
+
+/**
  * @brief Enable normal map compression.
  *
  * Input data will be treated a two component normal map, storing X and Y, and the codec will
@@ -305,6 +318,19 @@ enum astcenc_type
  * used by BC5n).
  */
 static const unsigned int ASTCENC_FLG_MAP_NORMAL          = 1 << 0;
+
+/**
+ * @brief Enable compression heuristics that assume use of decode_unorm8 decode mode.
+ *
+ * The decode_unorm8 decode mode rounds differently to the decode_fp16 decode mode, so enabling this
+ * flag during compression will allow the compressor to use the correct rounding when selecting
+ * encodings. This will improve the compressed image quality if your application is using the
+ * decode_unorm8 decode mode, but will reduce image quality if using decode_fp16.
+ *
+ * Note that LDR_SRGB images will always use decode_unorm8 for the RGB channels, irrespective of
+ * this setting.
+ */
+static const unsigned int ASTCENC_FLG_USE_DECODE_UNORM8        = 1 << 1;
 
 /**
  * @brief Enable alpha weighting.
@@ -372,6 +398,7 @@ static const unsigned int ASTCENC_ALL_FLAGS =
                               ASTCENC_FLG_MAP_RGBM |
                               ASTCENC_FLG_USE_ALPHA_WEIGHT |
                               ASTCENC_FLG_USE_PERCEPTUAL |
+                              ASTCENC_FLG_USE_DECODE_UNORM8 |
                               ASTCENC_FLG_DECOMPRESS_ONLY |
                               ASTCENC_FLG_SELF_DECOMPRESS_ONLY;
 
@@ -472,7 +499,7 @@ struct astcenc_config
 	/**
 	 * @brief The number of trial candidates per mode search (-candidatelimit).
 	 *
-	 * Valid values are between 1 and TUNE_MAX_TRIAL_CANDIDATES (default 4).
+	 * Valid values are between 1 and TUNE_MAX_TRIAL_CANDIDATES.
 	 */
 	unsigned int tune_candidate_limit;
 
@@ -520,21 +547,39 @@ struct astcenc_config
 	 *
 	 * This option is further scaled for normal maps, so it skips less often.
 	 */
-	float tune_2_partition_early_out_limit_factor;
+	float tune_2partition_early_out_limit_factor;
 
 	/**
 	 * @brief The threshold for skipping 4.1 trials (-3partitionlimitfactor).
 	 *
 	 * This option is further scaled for normal maps, so it skips less often.
 	 */
-	float tune_3_partition_early_out_limit_factor;
+	float tune_3partition_early_out_limit_factor;
 
 	/**
 	 * @brief The threshold for skipping two weight planes (-2planelimitcorrelation).
 	 *
 	 * This option is ineffective for normal maps.
 	 */
-	float tune_2_plane_early_out_limit_correlation;
+	float tune_2plane_early_out_limit_correlation;
+
+	/**
+	 * @brief The config enable for the mode0 fast-path search.
+	 *
+	 * If this is set to TUNE_MIN_TEXELS_MODE0 or higher then the early-out fast mode0
+	 * search is enabled. This option is ineffective for 3D block sizes.
+	 */
+	float tune_search_mode0_enable;
+
+	/**
+	 * @brief The progress callback, can be @c nullptr.
+	 *
+	 * If this is specified the codec will peridocially report progress for
+	 * compression as a percentage between 0 and 100. The callback is called from one
+	 * of the compressor threads, so doing significant work in the callback will
+	 * reduce compression performance.
+	 */
+	astcenc_progress_callback progress_callback;
 
 #if defined(ASTCENC_DIAGNOSTICS)
 	/**

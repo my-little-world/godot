@@ -28,9 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include <alloca.h>
+#pragma once
 
-#define OPENGL_INCLUDE_H <ES3/gl.h>
+#include <alloca.h>
 
 #define PTHREAD_RENAME_SELF
 

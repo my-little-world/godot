@@ -28,11 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifdef WEB_ENABLED
-
 #include "webrtc_data_channel_js.h"
 
-#include "emscripten.h"
+#ifdef WEB_ENABLED
+
+#include <emscripten.h>
 
 extern "C" {
 typedef void (*RTCChOnOpen)(void *p_obj);
@@ -198,12 +198,14 @@ WebRTCDataChannelJS::WebRTCDataChannelJS(int js_id) {
 	// Parse label
 	char *label = godot_js_rtc_datachannel_label_get(js_id);
 	if (label) {
-		_label.parse_utf8(label);
+		_label.clear();
+		_label.append_utf8(label);
 		free(label);
 	}
 	char *protocol = godot_js_rtc_datachannel_protocol_get(js_id);
 	if (protocol) {
-		_protocol.parse_utf8(protocol);
+		_protocol.clear();
+		_protocol.append_utf8(protocol);
 		free(protocol);
 	}
 }

@@ -31,7 +31,7 @@
 #include "range.h"
 
 PackedStringArray Range::get_configuration_warnings() const {
-	PackedStringArray warnings = Node::get_configuration_warnings();
+	PackedStringArray warnings = Control::get_configuration_warnings();
 
 	if (shared->exp_ratio && shared->min <= 0) {
 		warnings.push_back(RTR("If \"Exp Edit\" is enabled, \"Min Value\" must be greater than 0."));
@@ -45,7 +45,7 @@ void Range::_value_changed(double p_value) {
 }
 void Range::_value_changed_notify() {
 	_value_changed(shared->val);
-	emit_signal(SNAME("value_changed"), shared->val);
+	emit_signal(SceneStringName(value_changed), shared->val);
 	queue_redraw();
 }
 
@@ -60,7 +60,7 @@ void Range::Shared::emit_value_changed() {
 }
 
 void Range::_changed_notify(const char *p_what) {
-	emit_signal(SNAME("changed"));
+	emit_signal(CoreStringName(changed));
 	queue_redraw();
 }
 
@@ -94,6 +94,10 @@ void Range::set_value(double p_val) {
 }
 
 void Range::_set_value_no_signal(double p_val) {
+	if (!Math::is_finite(p_val)) {
+		return;
+	}
+
 	if (shared->step > 0) {
 		p_val = Math::round((p_val - shared->min) / shared->step) * shared->step + shared->min;
 	}
@@ -236,7 +240,7 @@ double Range::get_as_ratio() const {
 
 void Range::_share(Node *p_range) {
 	Range *r = Object::cast_to<Range>(p_range);
-	ERR_FAIL_COND(!r);
+	ERR_FAIL_NULL(r);
 	share(r);
 }
 
@@ -275,7 +279,7 @@ void Range::_ref_shared(Shared *p_shared) {
 void Range::_unref_shared() {
 	if (shared) {
 		shared->owners.erase(this);
-		if (shared->owners.size() == 0) {
+		if (shared->owners.is_empty()) {
 			memdelete(shared);
 			shared = nullptr;
 		}

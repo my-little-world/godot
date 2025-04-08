@@ -33,46 +33,35 @@
 void Marker2D::_draw_cross() {
 	const real_t extents = get_gizmo_extents();
 
-	// Add more points to create a "hard stop" in the color gradient.
-	PackedVector2Array points_x = {
+	PackedVector2Array points = {
 		Point2(+extents, 0),
 		Point2(),
 		Point2(),
-		Point2(-extents, 0)
-	};
-
-	PackedVector2Array points_y = {
+		Point2(-extents, 0),
 		Point2(0, +extents),
 		Point2(),
 		Point2(),
-		Point2(0, -extents)
+		Point2(0, -extents),
 	};
 
 	// Use the axis color which is brighter for the positive axis.
 	// Use a darkened axis color for the negative axis.
 	// This makes it possible to see in which direction the Marker3D node is rotated
 	// (which can be important depending on how it's used).
-	// Axis colors are taken from `axis_x_color` and `axis_y_color` (defined in `editor/editor_themes.cpp`).
+	// Axis colors are taken from `axis_x_color` and `axis_y_color` (defined in `editor/themes/editor_theme_manager.cpp`).
 	const Color color_x = Color(0.96, 0.20, 0.32);
-	PackedColorArray colors_x = {
-		color_x,
-		color_x,
-		color_x.lerp(Color(0, 0, 0), 0.5),
-		color_x.lerp(Color(0, 0, 0), 0.5)
-	};
-	draw_multiline_colors(points_x, colors_x);
-
 	const Color color_y = Color(0.53, 0.84, 0.01);
-	PackedColorArray colors_y = {
+	PackedColorArray colors = {
+		color_x,
+		color_x.darkened(0.5),
 		color_y,
-		color_y,
-		color_y.lerp(Color(0, 0, 0), 0.5),
-		color_y.lerp(Color(0, 0, 0), 0.5)
+		color_y.darkened(0.5),
 	};
-	draw_multiline_colors(points_y, colors_y);
+
+	draw_multiline_colors(points, colors);
 }
 
-#ifdef TOOLS_ENABLED
+#ifdef DEBUG_ENABLED
 Rect2 Marker2D::_edit_get_rect() const {
 	real_t extents = get_gizmo_extents();
 	return Rect2(Point2(-extents, -extents), Size2(extents * 2, extents * 2));
@@ -81,7 +70,7 @@ Rect2 Marker2D::_edit_get_rect() const {
 bool Marker2D::_edit_use_rect() const {
 	return false;
 }
-#endif
+#endif // DEBUG_ENABLED
 
 void Marker2D::_notification(int p_what) {
 	switch (p_what) {

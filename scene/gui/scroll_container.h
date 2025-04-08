@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SCROLL_CONTAINER_H
-#define SCROLL_CONTAINER_H
+#pragma once
 
 #include "container.h"
 
@@ -44,6 +43,7 @@ public:
 		SCROLL_MODE_AUTO,
 		SCROLL_MODE_SHOW_ALWAYS,
 		SCROLL_MODE_SHOW_NEVER,
+		SCROLL_MODE_RESERVE,
 	};
 
 private:
@@ -62,32 +62,42 @@ private:
 	bool drag_touching = false;
 	bool drag_touching_deaccel = false;
 	bool beyond_deadzone = false;
+	bool scroll_on_drag_hover = false;
 
 	ScrollMode horizontal_scroll_mode = SCROLL_MODE_AUTO;
 	ScrollMode vertical_scroll_mode = SCROLL_MODE_AUTO;
 
 	int deadzone = 0;
 	bool follow_focus = false;
+	int scroll_border = 20;
+	int scroll_speed = 12;
 
 	struct ThemeCache {
 		Ref<StyleBox> panel_style;
+		Ref<StyleBox> focus_style;
 	} theme_cache;
 
 	void _cancel_drag();
 
+	bool _is_h_scroll_visible() const;
+	bool _is_v_scroll_visible() const;
+
+	bool draw_focus_border = false;
+	bool focus_border_is_drawn = false;
+	bool child_has_focus();
+
 protected:
-	virtual void _update_theme_item_cache() override;
 	Size2 get_minimum_size() const override;
 
 	void _gui_focus_changed(Control *p_control);
 	void _reposition_children();
-	void _notification(int p_what);
 
-	void _scroll_moved(float);
+	void _notification(int p_what);
 	static void _bind_methods();
 
 	bool _updating_scrollbars = false;
 	void _update_scrollbar_position();
+	void _scroll_moved(float);
 
 public:
 	virtual void gui_input(const Ref<InputEvent> &p_gui_input) override;
@@ -97,6 +107,12 @@ public:
 
 	void set_v_scroll(int p_pos);
 	int get_v_scroll() const;
+
+	void set_horizontal_custom_step(float p_custom_step);
+	float get_horizontal_custom_step() const;
+
+	void set_vertical_custom_step(float p_custom_step);
+	float get_vertical_custom_step() const;
 
 	void set_horizontal_scroll_mode(ScrollMode p_mode);
 	ScrollMode get_horizontal_scroll_mode() const;
@@ -110,15 +126,18 @@ public:
 	bool is_following_focus() const;
 	void set_follow_focus(bool p_follow);
 
+	void set_scroll_on_drag_hover(bool p_scroll);
+
 	HScrollBar *get_h_scroll_bar();
 	VScrollBar *get_v_scroll_bar();
 	void ensure_control_visible(Control *p_control);
 
 	PackedStringArray get_configuration_warnings() const override;
 
+	void set_draw_focus_border(bool p_draw);
+	bool get_draw_focus_border();
+
 	ScrollContainer();
 };
 
 VARIANT_ENUM_CAST(ScrollContainer::ScrollMode);
-
-#endif // SCROLL_CONTAINER_H

@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PACKET_PEER_H
-#define PACKET_PEER_H
+#pragma once
 
 #include "core/io/stream_peer.h"
 #include "core/object/class_db.h"
@@ -37,7 +36,6 @@
 
 #include "core/extension/ext_wrappers.gen.inc"
 #include "core/object/gdvirtual.gen.inc"
-#include "core/object/script_language.h"
 #include "core/variant/native_ptr.h"
 
 class PacketPeer : public RefCounted {
@@ -125,5 +123,3 @@ public:
 	int get_output_buffer_max_size() const;
 	PacketPeerStream();
 };
-
-#endif // PACKET_PEER_H

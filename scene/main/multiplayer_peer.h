@@ -28,14 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MULTIPLAYER_PEER_H
-#define MULTIPLAYER_PEER_H
+#pragma once
 
 #include "core/io/packet_peer.h"
 
 #include "core/extension/ext_wrappers.gen.inc"
 #include "core/object/gdvirtual.gen.inc"
-#include "core/object/script_language.h"
 #include "core/variant/native_ptr.h"
 
 class MultiplayerPeer : public PacketPeer {
@@ -147,5 +145,3 @@ public:
 	EXBIND0RC(int, get_unique_id);
 	EXBIND0RC(ConnectionStatus, get_connection_status);
 };
-
-#endif // MULTIPLAYER_PEER_H

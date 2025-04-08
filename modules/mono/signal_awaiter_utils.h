@@ -28,13 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SIGNAL_AWAITER_UTILS_H
-#define SIGNAL_AWAITER_UTILS_H
-
-#include "core/object/ref_counted.h"
+#pragma once
 
 #include "csharp_script.h"
 #include "mono_gc_handle.h"
+
+#include "core/object/ref_counted.h"
 
 Error gd_mono_connect_signal_awaiter(Object *p_source, const StringName &p_signal, Object *p_target, GCHandleIntPtr p_awaiter_handle_ptr);
 
@@ -98,5 +97,3 @@ public:
 
 	EventSignalCallable(Object *p_owner, const StringName &p_event_signal_name);
 };
-
-#endif // SIGNAL_AWAITER_UTILS_H

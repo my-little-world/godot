@@ -28,12 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef REMOTE_DEBUGGER_PEER_WEBSOCKET_H
-#define REMOTE_DEBUGGER_PEER_WEBSOCKET_H
-
-#include "core/debugger/remote_debugger_peer.h"
+#pragma once
 
 #include "websocket_peer.h"
+
+#include "core/debugger/remote_debugger_peer.h"
 
 class RemoteDebuggerPeerWebSocket : public RemoteDebuggerPeer {
 	Ref<WebSocketPeer> ws_peer;
@@ -58,5 +57,3 @@ public:
 
 	RemoteDebuggerPeerWebSocket(Ref<WebSocketPeer> p_peer = Ref<WebSocketPeer>());
 };
-
-#endif // REMOTE_DEBUGGER_PEER_WEBSOCKET_H

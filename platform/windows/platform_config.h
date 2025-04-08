@@ -28,6 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include <malloc.h>
+#pragma once
 
-#define OPENGL_INCLUDE_H "thirdparty/glad/glad/gl.h"
+#include <malloc.h>

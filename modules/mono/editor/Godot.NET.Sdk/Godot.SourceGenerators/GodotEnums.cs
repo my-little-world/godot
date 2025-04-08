@@ -44,7 +44,8 @@ namespace Godot.SourceGenerators
         PackedVector2Array = 35,
         PackedVector3Array = 36,
         PackedColorArray = 37,
-        Max = 38
+        PackedVector4Array = 38,
+        Max = 39
     }
 
     internal enum PropertyHint
@@ -86,7 +87,10 @@ namespace Godot.SourceGenerators
         NodeType = 34,
         HideQuaternionEdit = 35,
         Password = 36,
-        Max = 37
+        LayersAvoidance = 37,
+        DictionaryType = 38,
+        ToolButton = 39,
+        Max = 40
     }
 
     [Flags]

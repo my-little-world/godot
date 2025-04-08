@@ -28,14 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef HASH_SET_H
-#define HASH_SET_H
+#pragma once
 
-#include "core/math/math_funcs.h"
 #include "core/os/memory.h"
-#include "core/templates/hash_map.h"
 #include "core/templates/hashfuncs.h"
-#include "core/templates/paged_allocator.h"
 
 /**
  * Implementation of Set using a bidi indexed hash map.
@@ -46,9 +42,9 @@
  *
  */
 
-template <class TKey,
-		class Hasher = HashMapHasherDefault,
-		class Comparator = HashMapComparatorDefault<TKey>>
+template <typename TKey,
+		typename Hasher = HashMapHasherDefault,
+		typename Comparator = HashMapComparatorDefault<TKey>>
 class HashSet {
 public:
 	static constexpr uint32_t MIN_CAPACITY_INDEX = 2; // Use a prime.
@@ -80,7 +76,7 @@ private:
 	}
 
 	bool _lookup_pos(const TKey &p_key, uint32_t &r_pos) const {
-		if (keys == nullptr) {
+		if (keys == nullptr || num_elements == 0) {
 			return false; // Failed lookups, no elements
 		}
 
@@ -237,7 +233,7 @@ public:
 	}
 
 	void clear() {
-		if (keys == nullptr) {
+		if (keys == nullptr || num_elements == 0) {
 			return;
 		}
 		uint32_t capacity = hash_table_size_primes[capacity_index];
@@ -445,6 +441,13 @@ public:
 		capacity_index = MIN_CAPACITY_INDEX;
 	}
 
+	HashSet(std::initializer_list<TKey> p_init) {
+		reserve(p_init.size());
+		for (const TKey &E : p_init) {
+			insert(E);
+		}
+	}
+
 	void reset() {
 		clear();
 
@@ -472,5 +475,3 @@ public:
 		}
 	}
 };
-
-#endif // HASH_SET_H

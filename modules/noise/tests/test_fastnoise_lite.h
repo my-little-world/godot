@@ -28,12 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEST_FASTNOISE_LITE_H
-#define TEST_FASTNOISE_LITE_H
+#pragma once
+
+#include "../fastnoise_lite.h"
 
 #include "tests/test_macros.h"
-
-#include "modules/noise/fastnoise_lite.h"
 
 namespace TestFastNoiseLite {
 
@@ -633,5 +632,3 @@ TEST_CASE("[FastNoiseLite] Generating seamless 2D images (11x11px) and compare t
 }
 
 } //namespace TestFastNoiseLite
-
-#endif // TEST_FASTNOISE_LITE_H

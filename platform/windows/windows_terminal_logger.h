@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WINDOWS_TERMINAL_LOGGER_H
-#define WINDOWS_TERMINAL_LOGGER_H
+#pragma once
 
 #ifdef WINDOWS_ENABLED
 
@@ -42,6 +41,4 @@ public:
 	virtual ~WindowsTerminalLogger();
 };
 
-#endif
-
-#endif // WINDOWS_TERMINAL_LOGGER_H
+#endif // WINDOWS_ENABLED

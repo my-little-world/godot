@@ -28,6 +28,6 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include <alloca.h>
+#pragma once
 
-#define OPENGL_INCLUDE_H "platform/web/godot_webgl2.h"
+#include <alloca.h>

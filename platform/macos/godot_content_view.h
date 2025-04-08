@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef GODOT_CONTENT_VIEW_H
-#define GODOT_CONTENT_VIEW_H
+#pragma once
 
 #include "servers/display_server.h"
 
@@ -47,14 +46,15 @@
 
 @interface GodotContentLayerDelegate : NSObject <CALayerDelegate> {
 	DisplayServer::WindowID window_id;
+	bool need_redraw;
 }
 
 - (void)setWindowID:(DisplayServer::WindowID)wid;
+- (void)setNeedRedraw:(bool)redraw;
 
 @end
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations" // OpenGL is deprecated in macOS 10.14
+GODOT_CLANG_WARNING_PUSH_AND_IGNORE("-Wdeprecated-declarations") // OpenGL is deprecated in macOS 10.14.
 
 @interface GodotContentView : RootView <NSTextInputClient> {
 	DisplayServer::WindowID window_id;
@@ -70,13 +70,11 @@
 
 - (void)processScrollEvent:(NSEvent *)event button:(MouseButton)button factor:(double)factor;
 - (void)processPanEvent:(NSEvent *)event dx:(double)dx dy:(double)dy;
-- (void)processMouseEvent:(NSEvent *)event index:(MouseButton)index pressed:(bool)pressed;
+- (void)processMouseEvent:(NSEvent *)event index:(MouseButton)index pressed:(bool)pressed outofstream:(bool)outofstream;
 - (void)setWindowID:(DisplayServer::WindowID)wid;
 - (void)updateLayerDelegate;
 - (void)cancelComposition;
 
 @end
 
-#pragma clang diagnostic pop
-
-#endif // GODOT_CONTENT_VIEW_H
+GODOT_CLANG_WARNING_POP

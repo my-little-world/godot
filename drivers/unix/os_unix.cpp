@@ -37,7 +37,8 @@
 #include "core/debugger/script_debugger.h"
 #include "drivers/unix/dir_access_unix.h"
 #include "drivers/unix/file_access_unix.h"
-#include "drivers/unix/net_socket_posix.h"
+#include "drivers/unix/file_access_unix_pipe.h"
+#include "drivers/unix/net_socket_unix.h"
 #include "drivers/unix/thread_posix.h"
 #include "servers/rendering_server.h"
 
@@ -76,10 +77,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
+
+#ifndef RTLD_DEEPBIND
+#define RTLD_DEEPBIND 0
+#endif
+
+#ifndef SANITIZERS_ENABLED
+#define GODOT_DLOPEN_MODE RTLD_NOW | RTLD_DEEPBIND
+#else
+#define GODOT_DLOPEN_MODE RTLD_NOW
+#endif
 
 #if defined(MACOS_ENABLED) || (defined(__ANDROID_API__) && __ANDROID_API__ >= 28)
 // Random location for getentropy. Fitting.
@@ -143,32 +155,119 @@ int OS_Unix::unix_initialize_audio(int p_audio_driver) {
 }
 
 void OS_Unix::initialize_core() {
+#ifdef THREADS_ENABLED
 	init_thread_posix();
+#endif
 
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_RESOURCES);
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_USERDATA);
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_FILESYSTEM);
+	FileAccess::make_default<FileAccessUnixPipe>(FileAccess::ACCESS_PIPE);
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_RESOURCES);
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_USERDATA);
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_FILESYSTEM);
 
-	NetSocketPosix::make_default();
+#ifndef UNIX_SOCKET_UNAVAILABLE
+	NetSocketUnix::make_default();
 	IPUnix::make_default();
+#endif
+	process_map = memnew((HashMap<ProcessID, ProcessInfo>));
 
 	_setup_clock();
 }
 
 void OS_Unix::finalize_core() {
-	NetSocketPosix::cleanup();
+	memdelete(process_map);
+#ifndef UNIX_SOCKET_UNAVAILABLE
+	NetSocketUnix::cleanup();
+#endif
 }
 
 Vector<String> OS_Unix::get_video_adapter_driver_info() const {
 	return Vector<String>();
 }
 
-String OS_Unix::get_stdin_string() {
-	char buff[1024];
-	return String::utf8(fgets(buff, 1024, stdin));
+String OS_Unix::get_stdin_string(int64_t p_buffer_size) {
+	Vector<uint8_t> data;
+	data.resize(p_buffer_size);
+	if (fgets((char *)data.ptrw(), data.size(), stdin)) {
+		return String::utf8((char *)data.ptr()).replace("\r\n", "\n").rstrip("\n");
+	}
+	return String();
+}
+
+PackedByteArray OS_Unix::get_stdin_buffer(int64_t p_buffer_size) {
+	Vector<uint8_t> data;
+	data.resize(p_buffer_size);
+	size_t sz = fread((void *)data.ptrw(), 1, data.size(), stdin);
+	if (sz > 0) {
+		data.resize(sz);
+		return data;
+	}
+	return PackedByteArray();
+}
+
+OS_Unix::StdHandleType OS_Unix::get_stdin_type() const {
+	int h = fileno(stdin);
+	if (h == -1) {
+		return STD_HANDLE_INVALID;
+	}
+
+	if (isatty(h)) {
+		return STD_HANDLE_CONSOLE;
+	}
+	struct stat statbuf;
+	if (fstat(h, &statbuf) < 0) {
+		return STD_HANDLE_UNKNOWN;
+	}
+	if (S_ISFIFO(statbuf.st_mode)) {
+		return STD_HANDLE_PIPE;
+	} else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
+		return STD_HANDLE_FILE;
+	}
+	return STD_HANDLE_UNKNOWN;
+}
+
+OS_Unix::StdHandleType OS_Unix::get_stdout_type() const {
+	int h = fileno(stdout);
+	if (h == -1) {
+		return STD_HANDLE_INVALID;
+	}
+
+	if (isatty(h)) {
+		return STD_HANDLE_CONSOLE;
+	}
+	struct stat statbuf;
+	if (fstat(h, &statbuf) < 0) {
+		return STD_HANDLE_UNKNOWN;
+	}
+	if (S_ISFIFO(statbuf.st_mode)) {
+		return STD_HANDLE_PIPE;
+	} else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
+		return STD_HANDLE_FILE;
+	}
+	return STD_HANDLE_UNKNOWN;
+}
+
+OS_Unix::StdHandleType OS_Unix::get_stderr_type() const {
+	int h = fileno(stderr);
+	if (h == -1) {
+		return STD_HANDLE_INVALID;
+	}
+
+	if (isatty(h)) {
+		return STD_HANDLE_CONSOLE;
+	}
+	struct stat statbuf;
+	if (fstat(h, &statbuf) < 0) {
+		return STD_HANDLE_UNKNOWN;
+	}
+	if (S_ISFIFO(statbuf.st_mode)) {
+		return STD_HANDLE_PIPE;
+	} else if (S_ISREG(statbuf.st_mode) || S_ISLNK(statbuf.st_mode)) {
+		return STD_HANDLE_FILE;
+	}
+	return STD_HANDLE_UNKNOWN;
 }
 
 Error OS_Unix::get_entropy(uint8_t *r_buffer, int p_bytes) {
@@ -207,6 +306,10 @@ String OS_Unix::get_distribution_name() const {
 
 String OS_Unix::get_version() const {
 	return "";
+}
+
+String OS_Unix::get_temp_path() const {
+	return "/tmp";
 }
 
 double OS_Unix::get_unix_time() const {
@@ -315,7 +418,7 @@ Dictionary OS_Unix::get_memory_info() const {
 	mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
 	vm_statistics64_data_t vmstat;
 	if (host_statistics64(mach_host_self(), HOST_VM_INFO64, (host_info64_t)&vmstat, &count) != KERN_SUCCESS) {
-		ERR_PRINT(vformat("Could not get host vm statistics."));
+		ERR_PRINT("Could not get host vm statistics.");
 	}
 	struct xsw_usage swap_used;
 	len = sizeof(swap_used);
@@ -477,6 +580,231 @@ Dictionary OS_Unix::get_memory_info() const {
 	return meminfo;
 }
 
+#ifndef __GLIBC__
+void OS_Unix::_load_iconv() {
+#if defined(MACOS_ENABLED) || defined(IOS_ENABLED)
+	String iconv_lib_aliases[] = { "/usr/lib/libiconv.2.dylib" };
+	String iconv_func_aliases[] = { "iconv" };
+	String charset_lib_aliases[] = { "/usr/lib/libcharset.1.dylib" };
+#else
+	String iconv_lib_aliases[] = { "", "libiconv.2.so", "libiconv.so" };
+	String iconv_func_aliases[] = { "libiconv", "iconv", "bsd_iconv", "rpl_iconv" };
+	String charset_lib_aliases[] = { "", "libcharset.1.so", "libcharset.so" };
+#endif
+
+	for (size_t i = 0; i < sizeof(iconv_lib_aliases) / sizeof(iconv_lib_aliases[0]); i++) {
+		void *iconv_lib = iconv_lib_aliases[i].is_empty() ? RTLD_NEXT : dlopen(iconv_lib_aliases[i].utf8().get_data(), RTLD_NOW);
+		if (iconv_lib) {
+			for (size_t j = 0; j < sizeof(iconv_func_aliases) / sizeof(iconv_func_aliases[0]); j++) {
+				gd_iconv_open = (PIConvOpen)dlsym(iconv_lib, (iconv_func_aliases[j] + "_open").utf8().get_data());
+				gd_iconv = (PIConv)dlsym(iconv_lib, (iconv_func_aliases[j]).utf8().get_data());
+				gd_iconv_close = (PIConvClose)dlsym(iconv_lib, (iconv_func_aliases[j] + "_close").utf8().get_data());
+				if (gd_iconv_open && gd_iconv && gd_iconv_close) {
+					break;
+				}
+			}
+			if (gd_iconv_open && gd_iconv && gd_iconv_close) {
+				break;
+			}
+			if (!iconv_lib_aliases[i].is_empty()) {
+				dlclose(iconv_lib);
+			}
+		}
+	}
+
+	for (size_t i = 0; i < sizeof(charset_lib_aliases) / sizeof(charset_lib_aliases[0]); i++) {
+		void *cs_lib = charset_lib_aliases[i].is_empty() ? RTLD_NEXT : dlopen(charset_lib_aliases[i].utf8().get_data(), RTLD_NOW);
+		if (cs_lib) {
+			gd_locale_charset = (PIConvLocaleCharset)dlsym(cs_lib, "locale_charset");
+			if (gd_locale_charset) {
+				break;
+			}
+			if (!charset_lib_aliases[i].is_empty()) {
+				dlclose(cs_lib);
+			}
+		}
+	}
+	_iconv_ok = gd_iconv_open && gd_iconv && gd_iconv_close && gd_locale_charset;
+}
+#endif
+
+String OS_Unix::multibyte_to_string(const String &p_encoding, const PackedByteArray &p_array) const {
+	ERR_FAIL_COND_V_MSG(!_iconv_ok, String(), "Conversion failed: Unable to load libiconv");
+
+	LocalVector<char> chars;
+#ifdef __GLIBC__
+	gd_iconv_t ctx = gd_iconv_open("UTF-8", p_encoding.is_empty() ? nl_langinfo(CODESET) : p_encoding.utf8().get_data());
+#else
+	gd_iconv_t ctx = gd_iconv_open("UTF-8", p_encoding.is_empty() ? gd_locale_charset() : p_encoding.utf8().get_data());
+#endif
+	ERR_FAIL_COND_V_MSG(ctx == (gd_iconv_t)(-1), String(), "Conversion failed: Unknown encoding");
+
+	char *in_ptr = (char *)p_array.ptr();
+	size_t in_size = p_array.size();
+
+	chars.resize(in_size);
+	char *out_ptr = (char *)chars.ptr();
+	size_t out_size = chars.size();
+
+	while (gd_iconv(ctx, &in_ptr, &in_size, &out_ptr, &out_size) == (size_t)-1) {
+		if (errno != E2BIG) {
+			gd_iconv_close(ctx);
+			ERR_FAIL_V_MSG(String(), vformat("Conversion failed: %d - %s", errno, strerror(errno)));
+		}
+		int64_t rate = (chars.size()) / (p_array.size() - in_size);
+		size_t oldpos = chars.size() - out_size;
+		chars.resize(chars.size() + in_size * rate);
+		out_ptr = (char *)chars.ptr() + oldpos;
+		out_size = chars.size() - oldpos;
+	}
+	chars.resize(chars.size() - out_size);
+	gd_iconv_close(ctx);
+
+	return String::utf8((const char *)chars.ptr(), chars.size());
+}
+
+PackedByteArray OS_Unix::string_to_multibyte(const String &p_encoding, const String &p_string) const {
+	ERR_FAIL_COND_V_MSG(!_iconv_ok, PackedByteArray(), "Conversion failed: Unable to load libiconv");
+
+	CharString charstr = p_string.utf8();
+
+	PackedByteArray ret;
+#ifdef __GLIBC__
+	gd_iconv_t ctx = gd_iconv_open(p_encoding.is_empty() ? nl_langinfo(CODESET) : p_encoding.utf8().get_data(), "UTF-8");
+#else
+	gd_iconv_t ctx = gd_iconv_open(p_encoding.is_empty() ? gd_locale_charset() : p_encoding.utf8().get_data(), "UTF-8");
+#endif
+	ERR_FAIL_COND_V_MSG(ctx == (gd_iconv_t)(-1), PackedByteArray(), "Conversion failed: Unknown encoding");
+
+	char *in_ptr = (char *)charstr.ptr();
+	size_t in_size = charstr.size();
+
+	ret.resize(in_size);
+	char *out_ptr = (char *)ret.ptrw();
+	size_t out_size = ret.size();
+
+	while (gd_iconv(ctx, &in_ptr, &in_size, &out_ptr, &out_size) == (size_t)-1) {
+		if (errno != E2BIG) {
+			gd_iconv_close(ctx);
+			ERR_FAIL_V_MSG(PackedByteArray(), vformat("Conversion failed: %d - %s", errno, strerror(errno)));
+		}
+		int64_t rate = (ret.size()) / (charstr.size() - in_size);
+		size_t oldpos = ret.size() - out_size;
+		ret.resize(ret.size() + in_size * rate);
+		out_ptr = (char *)ret.ptrw() + oldpos;
+		out_size = ret.size() - oldpos;
+	}
+	ret.resize(ret.size() - out_size);
+	gd_iconv_close(ctx);
+
+	return ret;
+}
+
+Dictionary OS_Unix::execute_with_pipe(const String &p_path, const List<String> &p_arguments, bool p_blocking) {
+#define CLEAN_PIPES           \
+	if (pipe_in[0] >= 0) {    \
+		::close(pipe_in[0]);  \
+	}                         \
+	if (pipe_in[1] >= 0) {    \
+		::close(pipe_in[1]);  \
+	}                         \
+	if (pipe_out[0] >= 0) {   \
+		::close(pipe_out[0]); \
+	}                         \
+	if (pipe_out[1] >= 0) {   \
+		::close(pipe_out[1]); \
+	}                         \
+	if (pipe_err[0] >= 0) {   \
+		::close(pipe_err[0]); \
+	}                         \
+	if (pipe_err[1] >= 0) {   \
+		::close(pipe_err[1]); \
+	}
+
+	Dictionary ret;
+#ifdef __EMSCRIPTEN__
+	// Don't compile this code at all to avoid undefined references.
+	// Actual virtual call goes to OS_Web.
+	ERR_FAIL_V(ret);
+#else
+	// Create pipes.
+	int pipe_in[2] = { -1, -1 };
+	int pipe_out[2] = { -1, -1 };
+	int pipe_err[2] = { -1, -1 };
+
+	ERR_FAIL_COND_V(pipe(pipe_in) != 0, ret);
+	if (pipe(pipe_out) != 0) {
+		CLEAN_PIPES
+		ERR_FAIL_V(ret);
+	}
+	if (pipe(pipe_err) != 0) {
+		CLEAN_PIPES
+		ERR_FAIL_V(ret);
+	}
+
+	// Create process.
+	pid_t pid = fork();
+	if (pid < 0) {
+		CLEAN_PIPES
+		ERR_FAIL_V(ret);
+	}
+
+	if (pid == 0) {
+		// The child process.
+		Vector<CharString> cs;
+		cs.push_back(p_path.utf8());
+		for (const String &arg : p_arguments) {
+			cs.push_back(arg.utf8());
+		}
+
+		Vector<char *> args;
+		for (int i = 0; i < cs.size(); i++) {
+			args.push_back((char *)cs[i].get_data());
+		}
+		args.push_back(0);
+
+		::close(STDIN_FILENO);
+		::dup2(pipe_in[0], STDIN_FILENO);
+
+		::close(STDOUT_FILENO);
+		::dup2(pipe_out[1], STDOUT_FILENO);
+
+		::close(STDERR_FILENO);
+		::dup2(pipe_err[1], STDERR_FILENO);
+
+		CLEAN_PIPES
+
+		execvp(p_path.utf8().get_data(), &args[0]);
+		// The execvp() function only returns if an error occurs.
+		ERR_PRINT("Could not create child process: " + p_path);
+		raise(SIGKILL);
+	}
+	::close(pipe_in[0]);
+	::close(pipe_out[1]);
+	::close(pipe_err[1]);
+
+	Ref<FileAccessUnixPipe> main_pipe;
+	main_pipe.instantiate();
+	main_pipe->open_existing(pipe_out[0], pipe_in[1], p_blocking);
+
+	Ref<FileAccessUnixPipe> err_pipe;
+	err_pipe.instantiate();
+	err_pipe->open_existing(pipe_err[0], 0, p_blocking);
+
+	ProcessInfo pi;
+	process_map_mutex.lock();
+	process_map->insert(pid, pi);
+	process_map_mutex.unlock();
+
+	ret["stdio"] = main_pipe;
+	ret["stderr"] = err_pipe;
+	ret["pid"] = pid;
+
+#undef CLEAN_PIPES
+	return ret;
+#endif
+}
+
 Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, String *r_pipe, int *r_exitcode, bool read_stderr, Mutex *p_pipe_mutex, bool p_open_console) {
 #ifdef __EMSCRIPTEN__
 	// Don't compile this code at all to avoid undefined references.
@@ -485,8 +813,8 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, St
 #else
 	if (r_pipe) {
 		String command = "\"" + p_path + "\"";
-		for (int i = 0; i < p_arguments.size(); i++) {
-			command += String(" \"") + p_arguments[i] + "\"";
+		for (const String &arg : p_arguments) {
+			command += String(" \"") + arg + "\"";
 		}
 		if (read_stderr) {
 			command += " 2>&1"; // Include stderr
@@ -495,14 +823,14 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, St
 		}
 
 		FILE *f = popen(command.utf8().get_data(), "r");
-		ERR_FAIL_COND_V_MSG(!f, ERR_CANT_OPEN, "Cannot create pipe from command: " + command);
+		ERR_FAIL_NULL_V_MSG(f, ERR_CANT_OPEN, "Cannot create pipe from command: " + command + ".");
 		char buf[65535];
 		while (fgets(buf, 65535, f)) {
 			if (p_pipe_mutex) {
 				p_pipe_mutex->lock();
 			}
 			String pipe_out;
-			if (pipe_out.parse_utf8(buf) == OK) {
+			if (pipe_out.append_utf8(buf) == OK) {
 				(*r_pipe) += pipe_out;
 			} else {
 				(*r_pipe) += String(buf); // If not valid UTF-8 try decode as Latin-1
@@ -526,8 +854,8 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, St
 		// The child process
 		Vector<CharString> cs;
 		cs.push_back(p_path.utf8());
-		for (int i = 0; i < p_arguments.size(); i++) {
-			cs.push_back(p_arguments[i].utf8());
+		for (const String &arg : p_arguments) {
+			cs.push_back(arg.utf8());
 		}
 
 		Vector<char *> args;
@@ -568,8 +896,8 @@ Error OS_Unix::create_process(const String &p_path, const List<String> &p_argume
 
 		Vector<CharString> cs;
 		cs.push_back(p_path.utf8());
-		for (int i = 0; i < p_arguments.size(); i++) {
-			cs.push_back(p_arguments[i].utf8());
+		for (const String &arg : p_arguments) {
+			cs.push_back(arg.utf8());
 		}
 
 		Vector<char *> args;
@@ -583,6 +911,11 @@ Error OS_Unix::create_process(const String &p_path, const List<String> &p_argume
 		ERR_PRINT("Could not create child process: " + p_path);
 		raise(SIGKILL);
 	}
+
+	ProcessInfo pi;
+	process_map_mutex.lock();
+	process_map->insert(pid, pi);
+	process_map_mutex.unlock();
 
 	if (r_child_id) {
 		*r_child_id = pid;
@@ -606,12 +939,43 @@ int OS_Unix::get_process_id() const {
 }
 
 bool OS_Unix::is_process_running(const ProcessID &p_pid) const {
+	MutexLock lock(process_map_mutex);
+	const ProcessInfo *pi = process_map->getptr(p_pid);
+
+	if (pi && !pi->is_running) {
+		return false;
+	}
+
 	int status = 0;
 	if (waitpid(p_pid, &status, WNOHANG) != 0) {
+		if (pi) {
+			pi->is_running = false;
+			pi->exit_code = status;
+		}
 		return false;
 	}
 
 	return true;
+}
+
+int OS_Unix::get_process_exit_code(const ProcessID &p_pid) const {
+	MutexLock lock(process_map_mutex);
+	const ProcessInfo *pi = process_map->getptr(p_pid);
+
+	if (pi && !pi->is_running) {
+		return pi->exit_code;
+	}
+
+	int status = 0;
+	if (waitpid(p_pid, &status, WNOHANG) != 0) {
+		status = WIFEXITED(status) ? WEXITSTATUS(status) : status;
+		if (pi) {
+			pi->is_running = false;
+			pi->exit_code = status;
+		}
+		return status;
+	}
+	return -1;
 }
 
 String OS_Unix::get_locale() const {
@@ -620,14 +984,14 @@ String OS_Unix::get_locale() const {
 	}
 
 	String locale = get_environment("LANG");
-	int tp = locale.find(".");
+	int tp = locale.find_char('.');
 	if (tp != -1) {
 		locale = locale.substr(0, tp);
 	}
 	return locale;
 }
 
-Error OS_Unix::open_dynamic_library(const String p_path, void *&p_library_handle, bool p_also_set_library_path, String *r_resolved_path) {
+Error OS_Unix::open_dynamic_library(const String &p_path, void *&p_library_handle, GDExtensionData *p_data) {
 	String path = p_path;
 
 	if (FileAccess::exists(path) && path.is_relative_path()) {
@@ -646,11 +1010,13 @@ Error OS_Unix::open_dynamic_library(const String p_path, void *&p_library_handle
 		path = get_executable_path().get_base_dir().path_join("../lib").path_join(p_path.get_file());
 	}
 
-	p_library_handle = dlopen(path.utf8().get_data(), RTLD_NOW);
-	ERR_FAIL_COND_V_MSG(!p_library_handle, ERR_CANT_OPEN, "Can't open dynamic library: " + p_path + ". Error: " + dlerror());
+	ERR_FAIL_COND_V(!FileAccess::exists(path), ERR_FILE_NOT_FOUND);
 
-	if (r_resolved_path != nullptr) {
-		*r_resolved_path = path;
+	p_library_handle = dlopen(path.utf8().get_data(), GODOT_DLOPEN_MODE);
+	ERR_FAIL_NULL_V_MSG(p_library_handle, ERR_CANT_OPEN, vformat("Can't open dynamic library: %s. Error: %s.", p_path, dlerror()));
+
+	if (p_data != nullptr && p_data->r_resolved_path != nullptr) {
+		*p_data->r_resolved_path = path;
 	}
 
 	return OK;
@@ -663,7 +1029,7 @@ Error OS_Unix::close_dynamic_library(void *p_library_handle) {
 	return OK;
 }
 
-Error OS_Unix::get_dynamic_library_symbol_handle(void *p_library_handle, const String p_name, void *&p_symbol_handle, bool p_optional) {
+Error OS_Unix::get_dynamic_library_symbol_handle(void *p_library_handle, const String &p_name, void *&p_symbol_handle, bool p_optional) {
 	const char *error;
 	dlerror(); // Clear existing errors
 
@@ -691,39 +1057,30 @@ bool OS_Unix::has_environment(const String &p_var) const {
 }
 
 String OS_Unix::get_environment(const String &p_var) const {
-	if (getenv(p_var.utf8().get_data())) {
-		return getenv(p_var.utf8().get_data());
+	const char *val = getenv(p_var.utf8().get_data());
+	if (val == nullptr) { // Not set; return empty string
+		return "";
 	}
-	return "";
+	String s;
+	if (s.append_utf8(val) == OK) {
+		return s;
+	}
+	return String(val); // Not valid UTF-8, so return as-is
 }
 
 void OS_Unix::set_environment(const String &p_var, const String &p_value) const {
-	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains("="), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
+	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains_char('='), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
 	int err = setenv(p_var.utf8().get_data(), p_value.utf8().get_data(), /* overwrite: */ 1);
 	ERR_FAIL_COND_MSG(err != 0, vformat("Failed setting environment variable '%s', the system is out of memory.", p_var));
 }
 
 void OS_Unix::unset_environment(const String &p_var) const {
-	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains("="), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
+	ERR_FAIL_COND_MSG(p_var.is_empty() || p_var.contains_char('='), vformat("Invalid environment variable name '%s', cannot be empty or include '='.", p_var));
 	unsetenv(p_var.utf8().get_data());
 }
 
-String OS_Unix::get_user_data_dir() const {
-	String appname = get_safe_dir_name(GLOBAL_GET("application/config/name"));
-	if (!appname.is_empty()) {
-		bool use_custom_dir = GLOBAL_GET("application/config/use_custom_user_dir");
-		if (use_custom_dir) {
-			String custom_dir = get_safe_dir_name(GLOBAL_GET("application/config/custom_user_dir_name"), true);
-			if (custom_dir.is_empty()) {
-				custom_dir = appname;
-			}
-			return get_data_path().path_join(custom_dir);
-		} else {
-			return get_data_path().path_join(get_godot_dir_name()).path_join("app_userdata").path_join(appname);
-		}
-	}
-
-	return get_data_path().path_join(get_godot_dir_name()).path_join("app_userdata").path_join("[unnamed project]");
+String OS_Unix::get_user_data_dir(const String &p_user_dir) const {
+	return get_data_path().path_join(p_user_dir);
 }
 
 String OS_Unix::get_executable_path() const {
@@ -734,17 +1091,32 @@ String OS_Unix::get_executable_path() const {
 	ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf));
 	String b;
 	if (len > 0) {
-		b.parse_utf8(buf, len);
+		b.append_utf8(buf, len);
 	}
 	if (b.is_empty()) {
 		WARN_PRINT("Couldn't get executable path from /proc/self/exe, using argv[0]");
 		return OS::get_executable_path();
 	}
 	return b;
-#elif defined(__OpenBSD__) || defined(__NetBSD__)
+#elif defined(__OpenBSD__)
 	char resolved_path[MAXPATHLEN];
 
 	realpath(OS::get_executable_path().utf8().get_data(), resolved_path);
+
+	return String(resolved_path);
+#elif defined(__NetBSD__)
+	int mib[4] = { CTL_KERN, KERN_PROC_ARGS, -1, KERN_PROC_PATHNAME };
+	char buf[MAXPATHLEN];
+	size_t len = sizeof(buf);
+	if (sysctl(mib, 4, buf, &len, nullptr, 0) != 0) {
+		WARN_PRINT("Couldn't get executable path from sysctl");
+		return OS::get_executable_path();
+	}
+
+	// NetBSD does not always return a normalized path. For example if argv[0] is "./a.out" then executable path is "/home/netbsd/./a.out". Normalize with realpath:
+	char resolved_path[MAXPATHLEN];
+
+	realpath(buf, resolved_path);
 
 	return String(resolved_path);
 #elif defined(__FreeBSD__)
@@ -755,9 +1127,8 @@ String OS_Unix::get_executable_path() const {
 		WARN_PRINT("Couldn't get executable path from sysctl");
 		return OS::get_executable_path();
 	}
-	String b;
-	b.parse_utf8(buf);
-	return b;
+
+	return String::utf8(buf);
 #elif defined(__APPLE__)
 	char temp_path[1];
 	uint32_t buff_size = 1;
@@ -830,6 +1201,10 @@ void UnixTerminalLogger::log_error(const char *p_function, const char *p_file, i
 UnixTerminalLogger::~UnixTerminalLogger() {}
 
 OS_Unix::OS_Unix() {
+#ifndef __GLIBC__
+	_load_iconv();
+#endif
+
 	Vector<Logger *> loggers;
 	loggers.push_back(memnew(UnixTerminalLogger));
 	_set_logger(memnew(CompositeLogger(loggers)));

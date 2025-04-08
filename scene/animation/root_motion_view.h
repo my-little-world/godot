@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ROOT_MOTION_VIEW_H
-#define ROOT_MOTION_VIEW_H
+#pragma once
 
 #include "scene/3d/visual_instance_3d.h"
 #include "scene/resources/immediate_mesh.h"
@@ -55,8 +54,8 @@ private:
 	static void _bind_methods();
 
 public:
-	void set_animation_path(const NodePath &p_path);
-	NodePath get_animation_path() const;
+	void set_animation_mixer(const NodePath &p_path);
+	NodePath get_animation_mixer() const;
 
 	void set_color(const Color &p_color);
 	Color get_color() const;
@@ -75,5 +74,3 @@ public:
 	RootMotionView();
 	~RootMotionView();
 };
-
-#endif // ROOT_MOTION_VIEW_H

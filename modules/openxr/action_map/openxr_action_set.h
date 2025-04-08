@@ -28,12 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_ACTION_SET_H
-#define OPENXR_ACTION_SET_H
-
-#include "core/io/resource.h"
+#pragma once
 
 #include "openxr_action.h"
+
+#include "core/io/resource.h"
 
 class OpenXRActionSet : public Resource {
 	GDCLASS(OpenXRActionSet, Resource);
@@ -71,5 +70,3 @@ public:
 
 	~OpenXRActionSet();
 };
-
-#endif // OPENXR_ACTION_SET_H

@@ -30,15 +30,13 @@
 
 #include "gradient.h"
 
-#include "core/core_string_names.h"
-
 Gradient::Gradient() {
 	//Set initial gradient transition from black to white
 	points.resize(2);
-	points.write[0].color = Color(0, 0, 0, 1);
-	points.write[0].offset = 0;
-	points.write[1].color = Color(1, 1, 1, 1);
-	points.write[1].offset = 1;
+	points[0].color = Color(0, 0, 0, 1);
+	points[0].offset = 0;
+	points[1].color = Color(1, 1, 1, 1);
+	points[1].offset = 1;
 }
 
 Gradient::~Gradient() {
@@ -69,7 +67,12 @@ void Gradient::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_interpolation_mode", "interpolation_mode"), &Gradient::set_interpolation_mode);
 	ClassDB::bind_method(D_METHOD("get_interpolation_mode"), &Gradient::get_interpolation_mode);
 
+	ClassDB::bind_method(D_METHOD("set_interpolation_color_space", "interpolation_color_space"), &Gradient::set_interpolation_color_space);
+	ClassDB::bind_method(D_METHOD("get_interpolation_color_space"), &Gradient::get_interpolation_color_space);
+
+	ADD_GROUP("Interpolation", "interpolation_");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "interpolation_mode", PROPERTY_HINT_ENUM, "Linear,Constant,Cubic"), "set_interpolation_mode", "get_interpolation_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "interpolation_color_space", PROPERTY_HINT_ENUM, "sRGB,Linear sRGB,Oklab"), "set_interpolation_color_space", "get_interpolation_color_space");
 
 	ADD_GROUP("Raw Data", "");
 	ADD_PROPERTY(PropertyInfo(Variant::PACKED_FLOAT32_ARRAY, "offsets"), "set_offsets", "get_offsets");
@@ -78,12 +81,22 @@ void Gradient::_bind_methods() {
 	BIND_ENUM_CONSTANT(GRADIENT_INTERPOLATE_LINEAR);
 	BIND_ENUM_CONSTANT(GRADIENT_INTERPOLATE_CONSTANT);
 	BIND_ENUM_CONSTANT(GRADIENT_INTERPOLATE_CUBIC);
+
+	BIND_ENUM_CONSTANT(GRADIENT_COLOR_SPACE_SRGB);
+	BIND_ENUM_CONSTANT(GRADIENT_COLOR_SPACE_LINEAR_SRGB);
+	BIND_ENUM_CONSTANT(GRADIENT_COLOR_SPACE_OKLAB);
+}
+
+void Gradient::_validate_property(PropertyInfo &p_property) const {
+	if (p_property.name == "interpolation_color_space" && interpolation_mode == GRADIENT_INTERPOLATE_CONSTANT) {
+		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+	}
 }
 
 Vector<float> Gradient::get_offsets() const {
 	Vector<float> offsets;
 	offsets.resize(points.size());
-	for (int i = 0; i < points.size(); i++) {
+	for (uint32_t i = 0; i < points.size(); i++) {
 		offsets.write[i] = points[i].offset;
 	}
 	return offsets;
@@ -92,28 +105,46 @@ Vector<float> Gradient::get_offsets() const {
 Vector<Color> Gradient::get_colors() const {
 	Vector<Color> colors;
 	colors.resize(points.size());
-	for (int i = 0; i < points.size(); i++) {
+	for (uint32_t i = 0; i < points.size(); i++) {
 		colors.write[i] = points[i].color;
 	}
 	return colors;
 }
 
 void Gradient::set_interpolation_mode(Gradient::InterpolationMode p_interp_mode) {
+	if (p_interp_mode == interpolation_mode) {
+		return;
+	}
+
 	interpolation_mode = p_interp_mode;
-	emit_signal(CoreStringNames::get_singleton()->changed);
+	emit_changed();
+	notify_property_list_changed();
 }
 
 Gradient::InterpolationMode Gradient::get_interpolation_mode() {
 	return interpolation_mode;
 }
 
+void Gradient::set_interpolation_color_space(Gradient::ColorSpace p_color_space) {
+	if (p_color_space == interpolation_color_space) {
+		return;
+	}
+
+	interpolation_color_space = p_color_space;
+	emit_changed();
+}
+
+Gradient::ColorSpace Gradient::get_interpolation_color_space() {
+	return interpolation_color_space;
+}
+
 void Gradient::set_offsets(const Vector<float> &p_offsets) {
 	points.resize(p_offsets.size());
-	for (int i = 0; i < points.size(); i++) {
-		points.write[i].offset = p_offsets[i];
+	for (uint32_t i = 0; i < points.size(); i++) {
+		points[i].offset = p_offsets[i];
 	}
 	is_sorted = false;
-	emit_signal(CoreStringNames::get_singleton()->changed);
+	emit_changed();
 }
 
 void Gradient::set_colors(const Vector<Color> &p_colors) {
@@ -121,14 +152,10 @@ void Gradient::set_colors(const Vector<Color> &p_colors) {
 		is_sorted = false;
 	}
 	points.resize(p_colors.size());
-	for (int i = 0; i < points.size(); i++) {
-		points.write[i].color = p_colors[i];
+	for (uint32_t i = 0; i < points.size(); i++) {
+		points[i].color = p_colors[i];
 	}
-	emit_signal(CoreStringNames::get_singleton()->changed);
-}
-
-Vector<Gradient::Point> &Gradient::get_points() {
-	return points;
+	emit_changed();
 }
 
 void Gradient::add_point(float p_offset, const Color &p_color) {
@@ -138,55 +165,49 @@ void Gradient::add_point(float p_offset, const Color &p_color) {
 	is_sorted = false;
 	points.push_back(p);
 
-	emit_signal(CoreStringNames::get_singleton()->changed);
+	emit_changed();
 }
 
 void Gradient::remove_point(int p_index) {
-	ERR_FAIL_INDEX(p_index, points.size());
+	ERR_FAIL_UNSIGNED_INDEX((uint32_t)p_index, points.size());
 	ERR_FAIL_COND(points.size() <= 1);
 	points.remove_at(p_index);
-	emit_signal(CoreStringNames::get_singleton()->changed);
+	emit_changed();
 }
 
 void Gradient::reverse() {
-	for (int i = 0; i < points.size(); i++) {
-		points.write[i].offset = 1.0 - points[i].offset;
+	for (uint32_t i = 0; i < points.size(); i++) {
+		points[i].offset = 1.0 - points[i].offset;
 	}
 
 	is_sorted = false;
 	_update_sorting();
-	emit_signal(CoreStringNames::get_singleton()->changed);
-}
-
-void Gradient::set_points(const Vector<Gradient::Point> &p_points) {
-	points = p_points;
-	is_sorted = false;
-	emit_signal(CoreStringNames::get_singleton()->changed);
+	emit_changed();
 }
 
 void Gradient::set_offset(int pos, const float offset) {
-	ERR_FAIL_INDEX(pos, points.size());
+	ERR_FAIL_UNSIGNED_INDEX((uint32_t)pos, points.size());
 	_update_sorting();
-	points.write[pos].offset = offset;
+	points[pos].offset = offset;
 	is_sorted = false;
-	emit_signal(CoreStringNames::get_singleton()->changed);
+	emit_changed();
 }
 
 float Gradient::get_offset(int pos) {
-	ERR_FAIL_INDEX_V(pos, points.size(), 0.0);
+	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)pos, points.size(), 0.0);
 	_update_sorting();
 	return points[pos].offset;
 }
 
 void Gradient::set_color(int pos, const Color &color) {
-	ERR_FAIL_INDEX(pos, points.size());
+	ERR_FAIL_UNSIGNED_INDEX((uint32_t)pos, points.size());
 	_update_sorting();
-	points.write[pos].color = color;
-	emit_signal(CoreStringNames::get_singleton()->changed);
+	points[pos].color = color;
+	emit_changed();
 }
 
 Color Gradient::get_color(int pos) {
-	ERR_FAIL_INDEX_V(pos, points.size(), Color());
+	ERR_FAIL_UNSIGNED_INDEX_V((uint32_t)pos, points.size(), Color());
 	_update_sorting();
 	return points[pos].color;
 }

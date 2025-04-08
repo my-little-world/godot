@@ -28,12 +28,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DISPLAY_SERVER_X11_H
-#define DISPLAY_SERVER_X11_H
+#pragma once
 
 #ifdef X11_ENABLED
 
-#include "servers/display_server.h"
+#include "joypad_linux.h"
 
 #include "core/input/input.h"
 #include "core/os/mutex.h"
@@ -43,27 +42,31 @@
 #include "drivers/alsamidi/midi_driver_alsamidi.h"
 #include "drivers/pulseaudio/audio_driver_pulseaudio.h"
 #include "drivers/unix/os_unix.h"
-#include "joypad_linux.h"
 #include "servers/audio_server.h"
+#include "servers/display_server.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "servers/rendering_server.h"
 
 #if defined(SPEECHD_ENABLED)
-#include "../tts_linux.h"
+#include "tts_linux.h"
 #endif
 
 #if defined(GLES3_ENABLED)
-#include "gl_manager_x11.h"
+#include "x11/gl_manager_x11.h"
+#include "x11/gl_manager_x11_egl.h"
 #endif
 
+#if defined(RD_ENABLED)
+#include "servers/rendering/rendering_device.h"
+
 #if defined(VULKAN_ENABLED)
-#include "drivers/vulkan/rendering_device_vulkan.h"
-#include "vulkan_context_x11.h"
+#include "x11/rendering_context_driver_vulkan_x11.h"
+#endif
 #endif
 
 #if defined(DBUS_ENABLED)
-#include "../freedesktop_portal_desktop.h"
-#include "../freedesktop_screensaver.h"
+#include "freedesktop_portal_desktop.h"
+#include "freedesktop_screensaver.h"
 #endif
 
 #include <X11/Xatom.h>
@@ -72,16 +75,16 @@
 #include <X11/keysym.h>
 
 #ifdef SOWRAP_ENABLED
-#include "dynwrappers/xlib-so_wrap.h"
+#include "x11/dynwrappers/xlib-so_wrap.h"
 
-#include "dynwrappers/xcursor-so_wrap.h"
-#include "dynwrappers/xext-so_wrap.h"
-#include "dynwrappers/xinerama-so_wrap.h"
-#include "dynwrappers/xinput2-so_wrap.h"
-#include "dynwrappers/xrandr-so_wrap.h"
-#include "dynwrappers/xrender-so_wrap.h"
+#include "x11/dynwrappers/xcursor-so_wrap.h"
+#include "x11/dynwrappers/xext-so_wrap.h"
+#include "x11/dynwrappers/xinerama-so_wrap.h"
+#include "x11/dynwrappers/xinput2-so_wrap.h"
+#include "x11/dynwrappers/xrandr-so_wrap.h"
+#include "x11/dynwrappers/xrender-so_wrap.h"
 
-#include "../xkbcommon-so_wrap.h"
+#include "xkbcommon-so_wrap.h"
 #else
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
@@ -119,8 +122,7 @@ typedef struct _xrr_monitor_info {
 #undef CursorShape
 
 class DisplayServerX11 : public DisplayServer {
-	//No need to register, it's platform-specific and nothing is added
-	//GDCLASS(DisplayServerX11, DisplayServer)
+	// No need to register with GDCLASS, it's platform-specific and nothing is added.
 
 	_THREAD_SAFE_CLASS_
 
@@ -138,10 +140,11 @@ class DisplayServerX11 : public DisplayServer {
 
 #if defined(GLES3_ENABLED)
 	GLManager_X11 *gl_manager = nullptr;
+	GLManagerEGL_X11 *gl_manager_egl = nullptr;
 #endif
-#if defined(VULKAN_ENABLED)
-	VulkanContextX11 *context_vulkan = nullptr;
-	RenderingDeviceVulkan *rendering_device_vulkan = nullptr;
+#if defined(RD_ENABLED)
+	RenderingContextDriver *rendering_context = nullptr;
+	RenderingDevice *rendering_device = nullptr;
 #endif
 
 #if defined(DBUS_ENABLED)
@@ -152,6 +155,7 @@ class DisplayServerX11 : public DisplayServer {
 #ifdef SPEECHD_ENABLED
 	TTS_Linux *tts = nullptr;
 #endif
+	NativeMenu *native_menu = nullptr;
 
 #if defined(DBUS_ENABLED)
 	FreeDesktopPortalDesktop *portal_desktop = nullptr;
@@ -203,6 +207,8 @@ class DisplayServerX11 : public DisplayServer {
 		bool layered_window = false;
 		bool mpass = false;
 
+		Window embed_parent = 0;
+
 		Rect2i parent_safe_rect;
 
 		unsigned int focus_order = 0;
@@ -225,10 +231,11 @@ class DisplayServerX11 : public DisplayServer {
 
 	List<WindowID> popup_list;
 
+	WindowID window_mouseover_id = INVALID_WINDOW_ID;
 	WindowID last_focused_window = INVALID_WINDOW_ID;
 
 	WindowID window_id_counter = MAIN_WINDOW_ID;
-	WindowID _create_window(WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Rect2i &p_rect);
+	WindowID _create_window(WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Rect2i &p_rect, Window p_parent_window);
 
 	String internal_clipboard;
 	String internal_clipboard_primary;
@@ -257,7 +264,6 @@ class DisplayServerX11 : public DisplayServer {
 	Point2i last_click_pos = Point2i(-100, -100);
 	uint64_t last_click_ms = 0;
 	MouseButton last_click_button_index = MouseButton::NONE;
-	BitField<MouseButtonMask> last_button_state;
 	bool app_focused = false;
 	uint64_t time_since_no_focus = 0;
 
@@ -286,11 +292,15 @@ class DisplayServerX11 : public DisplayServer {
 
 	Rect2i _screen_get_rect(int p_screen) const;
 
-	BitField<MouseButtonMask> _get_mouse_button_state(MouseButton p_x11_button, int p_x11_type);
 	void _get_key_modifier_state(unsigned int p_x11_state, Ref<InputEventWithModifiers> state);
 	void _flush_mouse_motion();
 
 	MouseMode mouse_mode = MOUSE_MODE_VISIBLE;
+	MouseMode mouse_mode_base = MOUSE_MODE_VISIBLE;
+	MouseMode mouse_mode_override = MOUSE_MODE_VISIBLE;
+	bool mouse_mode_override_enabled = false;
+	void _mouse_update_mode();
+
 	Point2i center;
 
 	void _handle_key_event(WindowID p_window, XKeyEvent *p_event, LocalVector<XEvent> &p_events, uint32_t &p_event_index, bool p_echo = false);
@@ -301,13 +311,14 @@ class DisplayServerX11 : public DisplayServer {
 
 	String _clipboard_get_impl(Atom p_source, Window x11_window, Atom target) const;
 	String _clipboard_get(Atom p_source, Window x11_window) const;
+	Atom _clipboard_get_image_target(Atom p_source, Window x11_window) const;
 	void _clipboard_transfer_ownership(Atom p_source, Window x11_window) const;
 
 	bool do_mouse_warp = false;
 
 	const char *cursor_theme = nullptr;
 	int cursor_size = 0;
-	XcursorImage *img[CURSOR_MAX];
+	XcursorImage *cursor_img[CURSOR_MAX];
 	Cursor cursors[CURSOR_MAX];
 	Cursor null_cursor;
 	CursorShape current_cursor = CURSOR_ARROW;
@@ -322,7 +333,11 @@ class DisplayServerX11 : public DisplayServer {
 	xrr_get_monitors_t xrr_get_monitors = nullptr;
 	xrr_free_monitors_t xrr_free_monitors = nullptr;
 	void *xrandr_handle = nullptr;
-	Bool xrandr_ext_ok;
+	bool xrandr_ext_ok = true;
+	bool xinerama_ext_ok = true;
+	bool xshaped_ext_ok = true;
+	bool xwayland = false;
+	bool kde5_embed_workaround = false; // Workaround embedded game visibility on KDE 5 (GH-102043).
 
 	struct Property {
 		unsigned char *data;
@@ -344,12 +359,15 @@ class DisplayServerX11 : public DisplayServer {
 	void _update_context(WindowData &wd);
 
 	Context context = CONTEXT_ENGINE;
+	bool swap_cancel_ok = false;
 
 	WindowID _get_focused_window_or_popup() const;
+	bool _window_focus_check();
 
 	void _send_window_event(const WindowData &wd, WindowEvent p_event);
 	static void _dispatch_input_events(const Ref<InputEvent> &p_event);
 	void _dispatch_input_event(const Ref<InputEvent> &p_event);
+	void _set_input_focus(Window p_window, int p_revert_to);
 
 	mutable Mutex events_mutex;
 	Thread events_thread;
@@ -364,6 +382,20 @@ class DisplayServerX11 : public DisplayServer {
 	static Bool _predicate_clipboard_selection(Display *display, XEvent *event, XPointer arg);
 	static Bool _predicate_clipboard_incr(Display *display, XEvent *event, XPointer arg);
 	static Bool _predicate_clipboard_save_targets(Display *display, XEvent *event, XPointer arg);
+
+	struct EmbeddedProcessData {
+		Window process_window = 0;
+		bool visible = true;
+	};
+	HashMap<OS::ProcessID, EmbeddedProcessData *> embedded_processes;
+
+	Point2i _get_window_position(Window p_window) const;
+	Rect2i _get_window_rect(Window p_window) const;
+	void _set_external_window_settings(Window p_window, Window p_parent_transient, WindowMode p_mode, uint32_t p_flags, const Rect2i &p_rect);
+	void _set_window_taskbar_pager_enabled(Window p_window, bool p_enabled);
+	Rect2i _screens_get_full_rect() const;
+
+	void initialize_tts() const;
 
 protected:
 	void _window_changed(XEvent *event);
@@ -390,10 +422,21 @@ public:
 #if defined(DBUS_ENABLED)
 	virtual bool is_dark_mode_supported() const override;
 	virtual bool is_dark_mode() const override;
+	virtual Color get_accent_color() const override;
+	virtual void set_system_theme_change_callback(const Callable &p_callable) override;
+
+	virtual Error file_dialog_show(const String &p_title, const String &p_current_directory, const String &p_filename, bool p_show_hidden, FileDialogMode p_mode, const Vector<String> &p_filters, const Callable &p_callback, WindowID p_window_id) override;
+	virtual Error file_dialog_with_options_show(const String &p_title, const String &p_current_directory, const String &p_root, const String &p_filename, bool p_show_hidden, FileDialogMode p_mode, const Vector<String> &p_filters, const TypedArray<Dictionary> &p_options, const Callable &p_callback, WindowID p_window_id) override;
 #endif
+
+	virtual void beep() const override;
 
 	virtual void mouse_set_mode(MouseMode p_mode) override;
 	virtual MouseMode mouse_get_mode() const override;
+	virtual void mouse_set_mode_override(MouseMode p_mode) override;
+	virtual MouseMode mouse_get_mode_override() const override;
+	virtual void mouse_set_mode_override_enabled(bool p_override_enabled) override;
+	virtual bool mouse_is_mode_override_enabled() const override;
 
 	virtual void warp_mouse(const Point2i &p_position) override;
 	virtual Point2i mouse_get_position() const override;
@@ -401,6 +444,8 @@ public:
 
 	virtual void clipboard_set(const String &p_text) override;
 	virtual String clipboard_get() const override;
+	virtual Ref<Image> clipboard_get_image() const override;
+	virtual bool clipboard_has_image() const override;
 	virtual void clipboard_set_primary(const String &p_text) override;
 	virtual String clipboard_get_primary() const override;
 
@@ -413,6 +458,7 @@ public:
 	virtual int screen_get_dpi(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;
 	virtual float screen_get_refresh_rate(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;
 	virtual Color screen_get_pixel(const Point2i &p_position) const override;
+	virtual Ref<Image> screen_get_image(int p_screen = SCREEN_OF_MAIN_WINDOW) const override;
 
 #if defined(DBUS_ENABLED)
 	virtual void screen_set_keep_on(bool p_enable) override;
@@ -421,7 +467,7 @@ public:
 
 	virtual Vector<DisplayServer::WindowID> get_window_list() const override;
 
-	virtual WindowID create_sub_window(WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Rect2i &p_rect = Rect2i()) override;
+	virtual WindowID create_sub_window(WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Rect2i &p_rect = Rect2i(), bool p_exclusive = false, WindowID p_transient_parent = INVALID_WINDOW_ID) override;
 	virtual void show_window(WindowID p_id) override;
 	virtual void delete_sub_window(WindowID p_id) override;
 
@@ -476,6 +522,9 @@ public:
 	virtual void window_request_attention(WindowID p_window = MAIN_WINDOW_ID) override;
 
 	virtual void window_move_to_foreground(WindowID p_window = MAIN_WINDOW_ID) override;
+	virtual bool window_is_focused(WindowID p_window = MAIN_WINDOW_ID) const override;
+
+	virtual WindowID get_focused_window() const override;
 
 	virtual bool window_can_draw(WindowID p_window = MAIN_WINDOW_ID) const override;
 
@@ -490,9 +539,19 @@ public:
 	virtual void window_set_vsync_mode(DisplayServer::VSyncMode p_vsync_mode, WindowID p_window = MAIN_WINDOW_ID) override;
 	virtual DisplayServer::VSyncMode window_get_vsync_mode(WindowID p_vsync_mode) const override;
 
+	virtual void window_start_drag(WindowID p_window = MAIN_WINDOW_ID) override;
+	virtual void window_start_resize(WindowResizeEdge p_edge, WindowID p_window) override;
+
+	virtual Error embed_process(WindowID p_window, OS::ProcessID p_pid, const Rect2i &p_rect, bool p_visible, bool p_grab_focus) override;
+	virtual Error request_close_embedded_process(OS::ProcessID p_pid) override;
+	virtual Error remove_embedded_process(OS::ProcessID p_pid) override;
+	virtual OS::ProcessID get_focused_process_id() override;
+
 	virtual void cursor_set_shape(CursorShape p_shape) override;
 	virtual CursorShape cursor_get_shape() const override;
 	virtual void cursor_set_custom_image(const Ref<Resource> &p_cursor, CursorShape p_shape, const Vector2 &p_hotspot) override;
+
+	virtual bool get_swap_cancel_ok() override;
 
 	virtual int keyboard_get_layout_count() const override;
 	virtual int keyboard_get_current_layout() const override;
@@ -500,27 +559,29 @@ public:
 	virtual String keyboard_get_layout_language(int p_index) const override;
 	virtual String keyboard_get_layout_name(int p_index) const override;
 	virtual Key keyboard_get_keycode_from_physical(Key p_keycode) const override;
+	virtual Key keyboard_get_label_from_physical(Key p_keycode) const override;
+
+	virtual bool color_picker(const Callable &p_callback) override;
 
 	virtual void process_events() override;
 
 	virtual void release_rendering_thread() override;
-	virtual void make_rendering_thread() override;
 	virtual void swap_buffers() override;
 
 	virtual void set_context(Context p_context) override;
 
+	virtual bool is_window_transparency_available() const override;
+
 	virtual void set_native_icon(const String &p_filename) override;
 	virtual void set_icon(const Ref<Image> &p_icon) override;
 
-	static DisplayServer *create_func(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Error &r_error);
+	static DisplayServer *create_func(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, int64_t p_parent_window, Error &r_error);
 	static Vector<String> get_rendering_drivers_func();
 
 	static void register_x11_driver();
 
-	DisplayServerX11(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Error &r_error);
+	DisplayServerX11(const String &p_rendering_driver, WindowMode p_mode, VSyncMode p_vsync_mode, uint32_t p_flags, const Vector2i *p_position, const Vector2i &p_resolution, int p_screen, Context p_context, int64_t p_parent_window, Error &r_error);
 	~DisplayServerX11();
 };
 
-#endif // X11 enabled
-
-#endif // DISPLAY_SERVER_X11_H
+#endif // X11_ENABLED

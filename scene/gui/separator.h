@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SEPARATOR_H
-#define SEPARATOR_H
+#pragma once
 
 #include "scene/gui/control.h"
 class Separator : public Control {
@@ -43,9 +42,8 @@ class Separator : public Control {
 protected:
 	Orientation orientation = Orientation::HORIZONTAL;
 
-	virtual void _update_theme_item_cache() override;
-
 	void _notification(int p_what);
+	static void _bind_methods();
 
 public:
 	virtual Size2 get_minimum_size() const override;
@@ -67,5 +65,3 @@ class HSeparator : public Separator {
 public:
 	HSeparator();
 };
-
-#endif // SEPARATOR_H

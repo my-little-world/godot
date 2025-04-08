@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef MARGIN_CONTAINER_H
-#define MARGIN_CONTAINER_H
+#pragma once
 
 #include "scene/gui/container.h"
 
@@ -44,9 +43,8 @@ class MarginContainer : public Container {
 	} theme_cache;
 
 protected:
-	virtual void _update_theme_item_cache() override;
-
 	void _notification(int p_what);
+	static void _bind_methods();
 
 public:
 	virtual Size2 get_minimum_size() const override;
@@ -54,7 +52,7 @@ public:
 	virtual Vector<int> get_allowed_size_flags_horizontal() const override;
 	virtual Vector<int> get_allowed_size_flags_vertical() const override;
 
+	int get_margin_size(Side p_side) const;
+
 	MarginContainer();
 };
-
-#endif // MARGIN_CONTAINER_H

@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXTURE_BUTTON_H
-#define TEXTURE_BUTTON_H
+#pragma once
 
 #include "scene/gui/base_button.h"
 #include "scene/resources/bit_map.h"
@@ -63,6 +62,9 @@ private:
 
 	bool hflip = false;
 	bool vflip = false;
+
+	void _set_texture(Ref<Texture2D> *p_destination, const Ref<Texture2D> &p_texture);
+	void _texture_changed();
 
 protected:
 	virtual Size2 get_minimum_size() const override;
@@ -101,5 +103,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(TextureButton::StretchMode);
-
-#endif // TEXTURE_BUTTON_H

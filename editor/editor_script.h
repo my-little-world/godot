@@ -28,15 +28,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_SCRIPT_H
-#define EDITOR_SCRIPT_H
+#pragma once
 
 #include "core/object/gdvirtual.gen.inc"
 #include "core/object/ref_counted.h"
-#include "core/object/script_language.h"
 
 class EditorInterface;
 class EditorNode;
+class Node;
 
 class EditorScript : public RefCounted {
 	GDCLASS(EditorScript, RefCounted);
@@ -44,7 +43,7 @@ class EditorScript : public RefCounted {
 protected:
 	static void _bind_methods();
 
-	GDVIRTUAL0(_run)
+	GDVIRTUAL0_REQUIRED(_run)
 
 public:
 	void add_root_node(Node *p_node);
@@ -52,8 +51,4 @@ public:
 	EditorInterface *get_editor_interface() const;
 
 	virtual void run();
-
-	EditorScript() {}
 };
-
-#endif // EDITOR_SCRIPT_H

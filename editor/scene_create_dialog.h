@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SCENE_CREATE_DIALOG_H
-#define SCENE_CREATE_DIALOG_H
+#pragma once
 
 #include "scene/gui/dialogs.h"
 
@@ -37,17 +36,17 @@ class ButtonGroup;
 class CheckBox;
 class CreateDialog;
 class EditorFileDialog;
+class EditorValidationPanel;
 class Label;
 class LineEdit;
 class OptionButton;
-class PanelContainer;
 
 class SceneCreateDialog : public ConfirmationDialog {
 	GDCLASS(SceneCreateDialog, ConfirmationDialog);
 
-	enum MsgType {
-		MSG_OK,
-		MSG_ERROR,
+	enum {
+		MSG_ID_PATH,
+		MSG_ID_ROOT,
 	};
 
 	const StringName type_meta = StringName("type");
@@ -79,15 +78,12 @@ private:
 	OptionButton *scene_extension_picker = nullptr;
 	LineEdit *root_name_edit = nullptr;
 
-	PanelContainer *status_panel = nullptr;
-	Label *file_error_label = nullptr;
-	Label *node_error_label = nullptr;
+	EditorValidationPanel *validation_panel = nullptr;
 
 	void accept_create();
 	void browse_types();
 	void on_type_picked();
 	void update_dialog();
-	void update_error(Label *p_label, MsgType p_type, const String &p_msg);
 
 protected:
 	void _notification(int p_what);
@@ -100,5 +96,3 @@ public:
 
 	SceneCreateDialog();
 };
-
-#endif // SCENE_CREATE_DIALOG_H

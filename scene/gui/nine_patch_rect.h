@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NINE_PATCH_RECT_H
-#define NINE_PATCH_RECT_H
+#pragma once
 
 #include "scene/gui/control.h"
 
@@ -50,6 +49,8 @@ public:
 
 	AxisStretchMode axis_h = AXIS_STRETCH_MODE_STRETCH;
 	AxisStretchMode axis_v = AXIS_STRETCH_MODE_STRETCH;
+
+	void _texture_changed();
 
 protected:
 	void _notification(int p_what);
@@ -80,5 +81,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(NinePatchRect::AxisStretchMode)
-
-#endif // NINE_PATCH_RECT_H

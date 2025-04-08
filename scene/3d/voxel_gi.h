@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef VOXEL_GI_H
-#define VOXEL_GI_H
+#pragma once
 
 #include "scene/3d/visual_instance_3d.h"
 
@@ -108,8 +107,8 @@ public:
 
 	};
 
-	typedef void (*BakeBeginFunc)(int);
-	typedef void (*BakeStepFunc)(int, const String &);
+	typedef void (*BakeBeginFunc)();
+	typedef bool (*BakeStepFunc)(int, const String &);
 	typedef void (*BakeEndFunc)();
 
 private:
@@ -130,6 +129,8 @@ private:
 
 	void _find_meshes(Node *p_at_node, List<PlotMesh> &plot_meshes);
 	void _debug_bake();
+
+	float _get_camera_exposure_normalization();
 
 protected:
 	static void _bind_methods();
@@ -168,5 +169,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(VoxelGI::Subdiv)
-
-#endif // VOXEL_GI_H

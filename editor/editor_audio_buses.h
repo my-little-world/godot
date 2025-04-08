@@ -28,10 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef EDITOR_AUDIO_BUSES_H
-#define EDITOR_AUDIO_BUSES_H
+#pragma once
 
-#include "editor/editor_plugin.h"
+#include "editor/plugins/editor_plugin.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/control.h"
@@ -146,9 +145,6 @@ class EditorAudioBusDrop : public Control {
 protected:
 	static void _bind_methods();
 	void _notification(int p_what);
-
-public:
-	EditorAudioBusDrop();
 };
 
 class EditorAudioBuses : public VBoxContainer {
@@ -172,14 +168,11 @@ class EditorAudioBuses : public VBoxContainer {
 	Timer *save_timer = nullptr;
 	String edited_path;
 
-	bool renaming_buses = false;
-	void _set_renaming_buses(bool p_renaming);
-
-	void _add_bus();
-	void _update_buses();
+	void _rebuild_buses();
 	void _update_bus(int p_index);
 	void _update_sends();
 
+	void _add_bus();
 	void _delete_bus(Object *p_which);
 	void _duplicate_bus(int p_which);
 	void _reset_bus_volume(Object *p_which);
@@ -266,9 +259,6 @@ private:
 	static void _bind_methods();
 	void _notification(int p_what);
 	void _draw_audio_notches();
-
-public:
-	EditorAudioMeterNotches() {}
 };
 
 class AudioBusesEditorPlugin : public EditorPlugin {
@@ -277,14 +267,11 @@ class AudioBusesEditorPlugin : public EditorPlugin {
 	EditorAudioBuses *audio_bus_editor = nullptr;
 
 public:
-	virtual String get_name() const override { return "SampleLibrary"; }
+	virtual String get_plugin_name() const override { return "SampleLibrary"; }
 	bool has_main_screen() const override { return false; }
 	virtual void edit(Object *p_node) override;
 	virtual bool handles(Object *p_node) const override;
 	virtual void make_visible(bool p_visible) override;
 
 	AudioBusesEditorPlugin(EditorAudioBuses *p_node);
-	~AudioBusesEditorPlugin();
 };
-
-#endif // EDITOR_AUDIO_BUSES_H

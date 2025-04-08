@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef DIR_ACCESS_WINDOWS_H
-#define DIR_ACCESS_WINDOWS_H
+#pragma once
 
 #ifdef WINDOWS_ENABLED
 
@@ -54,7 +53,7 @@ class DirAccessWindows : public DirAccess {
 	bool _cishidden = false;
 
 protected:
-	virtual String fix_path(String p_path) const override;
+	virtual String fix_path(const String &p_path) const override;
 
 public:
 	virtual Error list_dir_begin() override; ///< This starts dir listing
@@ -77,18 +76,18 @@ public:
 	virtual Error rename(String p_path, String p_new_path) override;
 	virtual Error remove(String p_path) override;
 
-	virtual bool is_link(String p_file) override { return false; };
-	virtual String read_link(String p_file) override { return p_file; };
-	virtual Error create_link(String p_source, String p_target) override { return FAILED; };
+	virtual bool is_link(String p_file) override;
+	virtual String read_link(String p_file) override;
+	virtual Error create_link(String p_source, String p_target) override;
 
 	uint64_t get_space_left() override;
 
 	virtual String get_filesystem_type() const override;
+	virtual bool is_case_sensitive(const String &p_path) const override;
+	virtual bool is_equivalent(const String &p_path_a, const String &p_path_b) const override;
 
 	DirAccessWindows();
 	~DirAccessWindows();
 };
 
 #endif // WINDOWS_ENABLED
-
-#endif // DIR_ACCESS_WINDOWS_H

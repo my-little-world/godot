@@ -32,16 +32,19 @@
 
 #include "editor/editor_settings.h"
 #include "editor/editor_undo_redo_manager.h"
+#include "editor/plugins/gizmos/gizmo_3d_helper.h"
 #include "editor/plugins/node_3d_editor_plugin.h"
 #include "scene/3d/gpu_particles_collision_3d.h"
 
 GPUParticlesCollision3DGizmoPlugin::GPUParticlesCollision3DGizmoPlugin() {
-	Color gizmo_color_attractor = EDITOR_DEF("editors/3d_gizmos/gizmo_colors/particle_attractor", Color(1, 0.7, 0.5));
+	helper.instantiate();
+
+	Color gizmo_color_attractor = EDITOR_GET("editors/3d_gizmos/gizmo_colors/particle_attractor");
 	create_material("shape_material_attractor", gizmo_color_attractor);
 	gizmo_color_attractor.a = 0.15;
 	create_material("shape_material_attractor_internal", gizmo_color_attractor);
 
-	Color gizmo_color_collision = EDITOR_DEF("editors/3d_gizmos/gizmo_colors/particle_collision", Color(0.5, 0.7, 1));
+	Color gizmo_color_collision = EDITOR_GET("editors/3d_gizmos/gizmo_colors/particle_collision");
 	create_material("shape_material_collision", gizmo_color_collision);
 	gizmo_color_collision.a = 0.15;
 	create_material("shape_material_collision_internal", gizmo_color_collision);
@@ -69,7 +72,7 @@ String GPUParticlesCollision3DGizmoPlugin::get_handle_name(const EditorNode3DGiz
 	}
 
 	if (Object::cast_to<GPUParticlesCollisionBox3D>(cs) || Object::cast_to<GPUParticlesAttractorBox3D>(cs) || Object::cast_to<GPUParticlesAttractorVectorField3D>(cs) || Object::cast_to<GPUParticlesCollisionSDF3D>(cs) || Object::cast_to<GPUParticlesCollisionHeightField3D>(cs)) {
-		return "Size";
+		return helper->box_get_handle_name(p_id);
 	}
 
 	return "";
@@ -89,16 +92,15 @@ Variant GPUParticlesCollision3DGizmoPlugin::get_handle_value(const EditorNode3DG
 	return Variant();
 }
 
+void GPUParticlesCollision3DGizmoPlugin::begin_handle_action(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary) {
+	helper->initialize_handle_action(get_handle_value(p_gizmo, p_id, p_secondary), p_gizmo->get_node_3d()->get_global_transform());
+}
+
 void GPUParticlesCollision3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_gizmo, int p_id, bool p_secondary, Camera3D *p_camera, const Point2 &p_point) {
 	Node3D *sn = p_gizmo->get_node_3d();
 
-	Transform3D gt = sn->get_global_transform();
-	Transform3D gi = gt.affine_inverse();
-
-	Vector3 ray_from = p_camera->project_ray_origin(p_point);
-	Vector3 ray_dir = p_camera->project_ray_normal(p_point);
-
-	Vector3 sg[2] = { gi.xform(ray_from), gi.xform(ray_from + ray_dir * 4096) };
+	Vector3 sg[2];
+	helper->get_segment(p_camera, p_point, sg);
 
 	if (Object::cast_to<GPUParticlesCollisionSphere3D>(sn) || Object::cast_to<GPUParticlesAttractorSphere3D>(sn)) {
 		Vector3 ra, rb;
@@ -116,22 +118,11 @@ void GPUParticlesCollision3DGizmoPlugin::set_handle(const EditorNode3DGizmo *p_g
 	}
 
 	if (Object::cast_to<GPUParticlesCollisionBox3D>(sn) || Object::cast_to<GPUParticlesAttractorBox3D>(sn) || Object::cast_to<GPUParticlesAttractorVectorField3D>(sn) || Object::cast_to<GPUParticlesCollisionSDF3D>(sn) || Object::cast_to<GPUParticlesCollisionHeightField3D>(sn)) {
-		Vector3 axis;
-		axis[p_id] = 1.0;
-		Vector3 ra, rb;
-		Geometry3D::get_closest_points_between_segments(Vector3(), axis * 4096, sg[0], sg[1], ra, rb);
-		float d = ra[p_id] * 2;
-		if (Node3DEditor::get_singleton()->is_snap_enabled()) {
-			d = Math::snapped(d, Node3DEditor::get_singleton()->get_translate_snap());
-		}
-
-		if (d < 0.001) {
-			d = 0.001;
-		}
-
-		Vector3 he = sn->call("get_size");
-		he[p_id] = d;
-		sn->call("set_size", he);
+		Vector3 size = sn->call("get_size");
+		Vector3 position;
+		helper->box_set_handle(sg, p_id, size, position);
+		sn->call("set_size", size);
+		sn->set_global_position(position);
 	}
 }
 
@@ -152,16 +143,7 @@ void GPUParticlesCollision3DGizmoPlugin::commit_handle(const EditorNode3DGizmo *
 	}
 
 	if (Object::cast_to<GPUParticlesCollisionBox3D>(sn) || Object::cast_to<GPUParticlesAttractorBox3D>(sn) || Object::cast_to<GPUParticlesAttractorVectorField3D>(sn) || Object::cast_to<GPUParticlesCollisionSDF3D>(sn) || Object::cast_to<GPUParticlesCollisionHeightField3D>(sn)) {
-		if (p_cancel) {
-			sn->call("set_size", p_restore);
-			return;
-		}
-
-		EditorUndoRedoManager *ur = EditorUndoRedoManager::get_singleton();
-		ur->create_action(TTR("Change Box Shape Size"));
-		ur->add_do_method(sn, "set_size", sn->call("get_size"));
-		ur->add_undo_method(sn, "set_size", p_restore);
-		ur->commit_action();
+		helper->box_commit_handle("Change Box Shape Size", p_cancel, sn);
 	}
 }
 
@@ -183,45 +165,81 @@ void GPUParticlesCollision3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 	const Ref<Material> handles_material = get_material("handles");
 
 	if (Object::cast_to<GPUParticlesCollisionSphere3D>(cs) || Object::cast_to<GPUParticlesAttractorSphere3D>(cs)) {
-		float r = cs->call("get_radius");
+		float radius = cs->call("get_radius");
+
+#define PUSH_QUARTER(m_from_x, m_from_y, m_to_x, m_to_y, m_y)  \
+	points_ptrw[index++] = Vector3(m_from_x, m_y, m_from_y);   \
+	points_ptrw[index++] = Vector3(m_to_x, m_y, m_to_y);       \
+	points_ptrw[index++] = Vector3(m_from_x, m_y, -m_from_y);  \
+	points_ptrw[index++] = Vector3(m_to_x, m_y, -m_to_y);      \
+	points_ptrw[index++] = Vector3(-m_from_x, m_y, m_from_y);  \
+	points_ptrw[index++] = Vector3(-m_to_x, m_y, m_to_y);      \
+	points_ptrw[index++] = Vector3(-m_from_x, m_y, -m_from_y); \
+	points_ptrw[index++] = Vector3(-m_to_x, m_y, -m_to_y);
+
+#define PUSH_QUARTER_XY(m_from_x, m_from_y, m_to_x, m_to_y)  \
+	points_ptrw[index++] = Vector3(m_from_x, -m_from_y, 0);  \
+	points_ptrw[index++] = Vector3(m_to_x, -m_to_y, 0);      \
+	points_ptrw[index++] = Vector3(m_from_x, m_from_y, 0);   \
+	points_ptrw[index++] = Vector3(m_to_x, m_to_y, 0);       \
+	points_ptrw[index++] = Vector3(-m_from_x, -m_from_y, 0); \
+	points_ptrw[index++] = Vector3(-m_to_x, -m_to_y, 0);     \
+	points_ptrw[index++] = Vector3(-m_from_x, m_from_y, 0);  \
+	points_ptrw[index++] = Vector3(-m_to_x, m_to_y, 0);
+
+#define PUSH_QUARTER_YZ(m_from_x, m_from_y, m_to_x, m_to_y)  \
+	points_ptrw[index++] = Vector3(0, -m_from_y, m_from_x);  \
+	points_ptrw[index++] = Vector3(0, -m_to_y, m_to_x);      \
+	points_ptrw[index++] = Vector3(0, m_from_y, m_from_x);   \
+	points_ptrw[index++] = Vector3(0, m_to_y, m_to_x);       \
+	points_ptrw[index++] = Vector3(0, -m_from_y, -m_from_x); \
+	points_ptrw[index++] = Vector3(0, -m_to_y, -m_to_x);     \
+	points_ptrw[index++] = Vector3(0, m_from_y, -m_from_x);  \
+	points_ptrw[index++] = Vector3(0, m_to_y, -m_to_x);
+
+		// Number of points in an octant. So there will be 8 * points_in_octant points in total.
+		// This corresponds to the smoothness of the circle.
+		const uint32_t points_in_octant = 16;
+		const real_t octant_angle = Math_PI / 4;
+		const real_t inc = (Math_PI / (4 * points_in_octant));
+		const real_t radius_squared = radius * radius;
+		real_t r = 0;
 
 		Vector<Vector3> points;
+		points.resize(3 * 8 * points_in_octant * 2);
+		Vector3 *points_ptrw = points.ptrw();
 
-		for (int i = 0; i <= 360; i++) {
-			float ra = Math::deg_to_rad((float)i);
-			float rb = Math::deg_to_rad((float)i + 1);
-			Point2 a = Vector2(Math::sin(ra), Math::cos(ra)) * r;
-			Point2 b = Vector2(Math::sin(rb), Math::cos(rb)) * r;
+		uint32_t index = 0;
+		float previous_x = radius;
+		float previous_y = 0.f;
 
-			points.push_back(Vector3(a.x, 0, a.y));
-			points.push_back(Vector3(b.x, 0, b.y));
-			points.push_back(Vector3(0, a.x, a.y));
-			points.push_back(Vector3(0, b.x, b.y));
-			points.push_back(Vector3(a.x, a.y, 0));
-			points.push_back(Vector3(b.x, b.y, 0));
-		}
+		for (uint32_t i = 0; i < points_in_octant; ++i) {
+			r += inc;
+			real_t x = Math::cos((i == points_in_octant - 1) ? octant_angle : r) * radius;
+			real_t y = Math::sqrt(radius_squared - (x * x));
 
-		Vector<Vector3> collision_segments;
+			PUSH_QUARTER(previous_x, previous_y, x, y, 0);
+			PUSH_QUARTER(previous_y, previous_x, y, x, 0);
 
-		for (int i = 0; i < 64; i++) {
-			float ra = i * (Math_TAU / 64.0);
-			float rb = (i + 1) * (Math_TAU / 64.0);
-			Point2 a = Vector2(Math::sin(ra), Math::cos(ra)) * r;
-			Point2 b = Vector2(Math::sin(rb), Math::cos(rb)) * r;
+			PUSH_QUARTER_XY(previous_x, previous_y, x, y);
+			PUSH_QUARTER_XY(previous_y, previous_x, y, x);
 
-			collision_segments.push_back(Vector3(a.x, 0, a.y));
-			collision_segments.push_back(Vector3(b.x, 0, b.y));
-			collision_segments.push_back(Vector3(0, a.x, a.y));
-			collision_segments.push_back(Vector3(0, b.x, b.y));
-			collision_segments.push_back(Vector3(a.x, a.y, 0));
-			collision_segments.push_back(Vector3(b.x, b.y, 0));
+			PUSH_QUARTER_YZ(previous_x, previous_y, x, y);
+			PUSH_QUARTER_YZ(previous_y, previous_x, y, x);
+
+			previous_x = x;
+			previous_y = y;
 		}
 
 		p_gizmo->add_lines(points, material);
-		p_gizmo->add_collision_segments(collision_segments);
+		p_gizmo->add_collision_segments(points);
 		Vector<Vector3> handles;
 		handles.push_back(Vector3(r, 0, 0));
 		p_gizmo->add_handles(handles, handles_material);
+
+#undef PUSH_QUARTER
+#undef PUSH_QUARTER_XY
+#undef PUSH_QUARTER_YZ
 	}
 
 	if (Object::cast_to<GPUParticlesCollisionBox3D>(cs) || Object::cast_to<GPUParticlesAttractorBox3D>(cs) || Object::cast_to<GPUParticlesAttractorVectorField3D>(cs) || Object::cast_to<GPUParticlesCollisionSDF3D>(cs) || Object::cast_to<GPUParticlesCollisionHeightField3D>(cs)) {
@@ -237,13 +255,7 @@ void GPUParticlesCollision3DGizmoPlugin::redraw(EditorNode3DGizmo *p_gizmo) {
 			lines.push_back(b);
 		}
 
-		Vector<Vector3> handles;
-
-		for (int i = 0; i < 3; i++) {
-			Vector3 ax;
-			ax[i] = cs->call("get_size").operator Vector3()[i] / 2;
-			handles.push_back(ax);
-		}
+		Vector<Vector3> handles = helper->box_get_handles(aabb.size);
 
 		p_gizmo->add_lines(lines, material);
 		p_gizmo->add_collision_segments(lines);

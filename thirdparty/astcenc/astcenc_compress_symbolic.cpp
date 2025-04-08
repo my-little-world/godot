@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // ----------------------------------------------------------------------------
-// Copyright 2011-2023 Arm Limited
+// Copyright 2011-2024 Arm Limited
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not
 // use this file except in compliance with the License. You may obtain a copy
@@ -247,7 +247,7 @@ static bool realign_weights_decimated(
 		}
 
 		// Create an unquantized weight grid for this decimation level
-		alignas(ASTCENC_VECALIGN) float uq_weightsf[BLOCK_MAX_WEIGHTS];
+		ASTCENC_ALIGNAS float uq_weightsf[BLOCK_MAX_WEIGHTS];
 		for (unsigned int we_idx = 0; we_idx < weight_count; we_idx += ASTCENC_SIMD_WIDTH)
 		{
 			vint unquant_value(dec_weights_uquant + we_idx);
@@ -391,7 +391,7 @@ static float compress_symbolic_block_for_partition_1plane(
 	for (unsigned int i = 0; i < max_decimation_modes; i++)
 	{
 		const auto& dm = bsd.get_decimation_mode(i);
-		if (!dm.is_ref_1_plane(static_cast<quant_method>(max_weight_quant)))
+		if (!dm.is_ref_1plane(static_cast<quant_method>(max_weight_quant)))
 		{
 			continue;
 		}
@@ -467,7 +467,7 @@ static float compress_symbolic_block_for_partition_1plane(
 
 		qwt_bitcounts[i] = static_cast<int8_t>(bitcount);
 
-		alignas(ASTCENC_VECALIGN) float dec_weights_uquantf[BLOCK_MAX_WEIGHTS];
+		ASTCENC_ALIGNAS float dec_weights_uquantf[BLOCK_MAX_WEIGHTS];
 
 		// Generate the optimized set of weights for the weight mode
 		compute_quantized_weights_for_decimation(
@@ -561,7 +561,7 @@ static float compress_symbolic_block_for_partition_1plane(
 			workscb.color_formats_matched = 0;
 			if (partition_count >= 2 && all_same)
 			{
-				uint8_t colorvals[BLOCK_MAX_PARTITIONS][12];
+				uint8_t colorvals[BLOCK_MAX_PARTITIONS][8];
 				uint8_t color_formats_mod[BLOCK_MAX_PARTITIONS] { 0 };
 				bool all_same_mod = true;
 				for (unsigned int j = 0; j < partition_count; j++)
@@ -743,7 +743,7 @@ static float compress_symbolic_block_for_partition_2planes(
 	for (unsigned int i = 0; i < bsd.decimation_mode_count_selected; i++)
 	{
 		const auto& dm = bsd.get_decimation_mode(i);
-		if (!dm.is_ref_2_plane(static_cast<quant_method>(max_weight_quant)))
+		if (!dm.is_ref_2plane(static_cast<quant_method>(max_weight_quant)))
 		{
 			continue;
 		}
@@ -830,7 +830,7 @@ static float compress_symbolic_block_for_partition_2planes(
 		unsigned int decimation_mode = bm.decimation_mode;
 		const auto& di = bsd.get_decimation_info(decimation_mode);
 
-		alignas(ASTCENC_VECALIGN) float dec_weights_uquantf[BLOCK_MAX_WEIGHTS];
+		ASTCENC_ALIGNAS float dec_weights_uquantf[BLOCK_MAX_WEIGHTS];
 
 		// Generate the optimized set of weights for the mode
 		compute_quantized_weights_for_decimation(
@@ -1163,7 +1163,7 @@ static float prepare_block_statistics(
 void compress_block(
 	const astcenc_contexti& ctx,
 	const image_block& blk,
-	physical_compressed_block& pcb,
+	uint8_t pcb[16],
 	compression_working_buffers& tmpbuf)
 {
 	astcenc_profile decode_mode = ctx.config.profile;
@@ -1263,8 +1263,8 @@ void compress_block(
 
 	float exit_thresholds_for_pcount[BLOCK_MAX_PARTITIONS] {
 		0.0f,
-		ctx.config.tune_2_partition_early_out_limit_factor,
-		ctx.config.tune_3_partition_early_out_limit_factor,
+		ctx.config.tune_2partition_early_out_limit_factor,
+		ctx.config.tune_3partition_early_out_limit_factor,
 		0.0f
 	};
 
@@ -1282,9 +1282,10 @@ void compress_block(
 
 	static const float errorval_overshoot = 1.0f / ctx.config.tune_mse_overshoot;
 
-	// Only enable MODE0 fast path (trial 0) if 2D, and more than 25 texels
+	// Only enable MODE0 fast path if enabled
+	// Never enable for 3D blocks as no "always" block modes are available
 	int start_trial = 1;
-	if ((bsd.texel_count >= TUNE_MIN_TEXELS_MODE0_FASTPATH) && (bsd.zdim == 1))
+ 	if ((ctx.config.tune_search_mode0_enable >= TUNE_MIN_SEARCH_MODE0) && (bsd.zdim == 1))
 	{
 		start_trial = 0;
 	}
@@ -1318,7 +1319,7 @@ void compress_block(
 	lowest_correl = prepare_block_statistics(bsd.texel_count, blk);
 #endif
 
-	block_skip_two_plane = lowest_correl > ctx.config.tune_2_plane_early_out_limit_correlation;
+	block_skip_two_plane = lowest_correl > ctx.config.tune_2plane_early_out_limit_correlation;
 
 	// Test the four possible 1-partition, 2-planes modes. Do this in reverse, as
 	// alpha is the most likely to be non-correlated if it is present in the data.
@@ -1331,7 +1332,7 @@ void compress_block(
 
 		if (block_skip_two_plane)
 		{
-			trace_add_data("skip", "tune_2_plane_early_out_limit_correlation");
+			trace_add_data("skip", "tune_2plane_early_out_limit_correlation");
 			continue;
 		}
 

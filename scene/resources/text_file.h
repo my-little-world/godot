@@ -28,11 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TEXT_FILE_H
-#define TEXT_FILE_H
+#pragma once
 
-#include "core/io/resource_loader.h"
-#include "core/io/resource_saver.h"
+#include "core/io/resource.h"
 
 class TextFile : public Resource {
 	GDCLASS(TextFile, Resource);
@@ -40,6 +38,9 @@ class TextFile : public Resource {
 private:
 	String text;
 	String path;
+
+protected:
+	virtual bool editor_can_reload_from_file() override { return false; }
 
 public:
 	virtual bool has_text() const;
@@ -50,5 +51,3 @@ public:
 	void set_file_path(const String &p_path) { path = p_path; }
 	Error load_text(const String &p_path);
 };
-
-#endif // TEXT_FILE_H

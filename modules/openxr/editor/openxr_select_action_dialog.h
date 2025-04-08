@@ -28,10 +28,10 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef OPENXR_SELECT_ACTION_DIALOG_H
-#define OPENXR_SELECT_ACTION_DIALOG_H
+#pragma once
 
 #include "../action_map/openxr_action_map.h"
+
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/dialogs.h"
@@ -63,5 +63,3 @@ public:
 
 	OpenXRSelectActionDialog(Ref<OpenXRActionMap> p_action_map);
 };
-
-#endif // OPENXR_SELECT_ACTION_DIALOG_H

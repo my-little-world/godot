@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef IMPORT_DEFAULTS_EDITOR_H
-#define IMPORT_DEFAULTS_EDITOR_H
+#pragma once
 
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
@@ -57,7 +56,6 @@ class ImportDefaultsEditor : public VBoxContainer {
 
 protected:
 	void _notification(int p_what);
-	static void _bind_methods();
 
 public:
 	void clear();
@@ -65,5 +63,3 @@ public:
 	ImportDefaultsEditor();
 	~ImportDefaultsEditor();
 };
-
-#endif // IMPORT_DEFAULTS_EDITOR_H

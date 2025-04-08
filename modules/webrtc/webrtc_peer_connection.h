@@ -28,11 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef WEBRTC_PEER_CONNECTION_H
-#define WEBRTC_PEER_CONNECTION_H
+#pragma once
 
-#include "core/io/packet_peer.h"
-#include "modules/webrtc/webrtc_data_channel.h"
+#include "webrtc_data_channel.h"
 
 class WebRTCPeerConnection : public RefCounted {
 	GDCLASS(WebRTCPeerConnection, RefCounted);
@@ -84,7 +82,7 @@ public:
 	virtual Error poll() = 0;
 	virtual void close() = 0;
 
-	static WebRTCPeerConnection *create();
+	static WebRTCPeerConnection *create(bool p_notify_postinitialize = true);
 
 	WebRTCPeerConnection();
 	~WebRTCPeerConnection();
@@ -93,5 +91,3 @@ public:
 VARIANT_ENUM_CAST(WebRTCPeerConnection::ConnectionState);
 VARIANT_ENUM_CAST(WebRTCPeerConnection::GatheringState);
 VARIANT_ENUM_CAST(WebRTCPeerConnection::SignalingState);
-
-#endif // WEBRTC_PEER_CONNECTION_H

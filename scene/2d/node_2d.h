@@ -28,26 +28,27 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef NODE_2D_H
-#define NODE_2D_H
+#pragma once
 
 #include "scene/main/canvas_item.h"
 
 class Node2D : public CanvasItem {
 	GDCLASS(Node2D, CanvasItem);
 
-	Point2 position;
-	real_t rotation = 0.0;
-	Size2 scale = Vector2(1, 1);
-	real_t skew = 0.0;
+	mutable MTFlag xform_dirty;
+	mutable Point2 position;
+	mutable real_t rotation = 0.0;
+	mutable Size2 scale = Vector2(1, 1);
+	mutable real_t skew = 0.0;
 
 	Transform2D transform;
 
-	bool _xform_dirty = false;
+	_FORCE_INLINE_ bool _is_xform_dirty() const { return is_group_processing() ? xform_dirty.mt.is_set() : xform_dirty.st; }
+	void _set_xform_dirty(bool p_dirty) const;
 
 	void _update_transform();
 
-	void _update_xform_values();
+	void _update_xform_values() const;
 
 protected:
 	void _notification(int p_notification);
@@ -117,5 +118,3 @@ public:
 
 	Node2D() {}
 };
-
-#endif // NODE_2D_H

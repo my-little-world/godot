@@ -28,8 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ZIP_PACKER_H
-#define ZIP_PACKER_H
+#pragma once
 
 #include "core/io/file_access.h"
 #include "core/object/ref_counted.h"
@@ -40,7 +39,7 @@ class ZIPPacker : public RefCounted {
 	GDCLASS(ZIPPacker, RefCounted);
 
 	Ref<FileAccess> fa;
-	zipFile zf;
+	zipFile zf = nullptr;
 
 protected:
 	static void _bind_methods();
@@ -52,11 +51,11 @@ public:
 		APPEND_ADDINZIP = 2,
 	};
 
-	Error open(String p_path, ZipAppend p_append);
+	Error open(const String &p_path, ZipAppend p_append);
 	Error close();
 
-	Error start_file(String p_path);
-	Error write_file(Vector<uint8_t> p_data);
+	Error start_file(const String &p_path);
+	Error write_file(const Vector<uint8_t> &p_data);
 	Error close_file();
 
 	ZIPPacker();
@@ -64,5 +63,3 @@ public:
 };
 
 VARIANT_ENUM_CAST(ZIPPacker::ZipAppend)
-
-#endif // ZIP_PACKER_H

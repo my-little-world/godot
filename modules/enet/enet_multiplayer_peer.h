@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef ENET_MULTIPLAYER_PEER_H
-#define ENET_MULTIPLAYER_PEER_H
+#pragma once
+
+#include "enet_connection.h"
 
 #include "core/crypto/crypto.h"
 #include "scene/main/multiplayer_peer.h"
 
-#include "enet_connection.h"
 #include <enet/enet.h>
 
 class ENetMultiplayerPeer : public MultiplayerPeer {
@@ -131,5 +131,3 @@ public:
 	ENetMultiplayerPeer();
 	~ENetMultiplayerPeer();
 };
-
-#endif // ENET_MULTIPLAYER_PEER_H

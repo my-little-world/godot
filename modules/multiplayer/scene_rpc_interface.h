@@ -28,13 +28,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SCENE_RPC_INTERFACE_H
-#define SCENE_RPC_INTERFACE_H
+#pragma once
 
 #include "core/object/ref_counted.h"
 #include "scene/main/multiplayer_api.h"
 
 class SceneMultiplayer;
+class SceneCacheInterface;
+class SceneReplicationInterface;
 class Node;
 
 class SceneRPCInterface : public RefCounted {
@@ -77,6 +78,9 @@ private:
 	};
 
 	SceneMultiplayer *multiplayer = nullptr;
+	SceneCacheInterface *multiplayer_cache = nullptr;
+	SceneReplicationInterface *multiplayer_replicator = nullptr;
+
 	Vector<uint8_t> packet_cache;
 
 	HashMap<ObjectID, RPCConfigCache> rpc_cache;
@@ -99,7 +103,9 @@ public:
 	void process_rpc(int p_from, const uint8_t *p_packet, int p_packet_len);
 	String get_rpc_md5(const Object *p_obj);
 
-	SceneRPCInterface(SceneMultiplayer *p_multiplayer) { multiplayer = p_multiplayer; }
+	SceneRPCInterface(SceneMultiplayer *p_multiplayer, SceneCacheInterface *p_cache, SceneReplicationInterface *p_replicator) {
+		multiplayer = p_multiplayer;
+		multiplayer_cache = p_cache;
+		multiplayer_replicator = p_replicator;
+	}
 };
-
-#endif // SCENE_RPC_INTERFACE_H

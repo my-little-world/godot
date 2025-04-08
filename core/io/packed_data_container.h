@@ -28,15 +28,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef PACKED_DATA_CONTAINER_H
-#define PACKED_DATA_CONTAINER_H
+#pragma once
 
 #include "core/io/resource.h"
 
 class PackedDataContainer : public Resource {
 	GDCLASS(PackedDataContainer, Resource);
 
-	enum {
+	enum : uint32_t {
 		TYPE_DICT = 0xFFFFFFFF,
 		TYPE_ARRAY = 0xFFFFFFFE,
 	};
@@ -94,12 +93,9 @@ public:
 	Variant _iter_init(const Array &p_iter);
 	Variant _iter_next(const Array &p_iter);
 	Variant _iter_get(const Variant &p_iter);
-	bool _is_dictionary() const;
 
 	int size() const;
 	virtual Variant getvar(const Variant &p_key, bool *r_valid = nullptr) const override;
 
 	PackedDataContainerRef() {}
 };
-
-#endif // PACKED_DATA_CONTAINER_H

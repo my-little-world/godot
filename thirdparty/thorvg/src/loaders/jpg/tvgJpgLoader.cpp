@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - 2022 Samsung Electronics Co., Ltd. All rights reserved.
+ * Copyright (c) 2021 - 2024 the ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,30 +21,11 @@
  */
 
 #include <memory.h>
-#include "tvgLoader.h"
 #include "tvgJpgLoader.h"
 
 /************************************************************************/
 /* Internal Class Implementation                                        */
 /************************************************************************/
-
-static inline uint32_t CHANGE_COLORSPACE(uint32_t c)
-{
-    return (c & 0xff000000) + ((c & 0x00ff0000)>>16) + (c & 0x0000ff00) + ((c & 0x000000ff)<<16);
-}
-
-
-static void _changeColorSpace(uint32_t* data, uint32_t w, uint32_t h)
-{
-    auto buffer = data;
-    for (uint32_t y = 0; y < h; ++y, buffer += w) {
-        auto src = buffer;
-        for (uint32_t x = 0; x < w; ++x, ++src) {
-            *src = CHANGE_COLORSPACE(*src);
-        }
-    }
-}
-
 
 void JpgLoader::clear()
 {
@@ -56,23 +37,40 @@ void JpgLoader::clear()
 }
 
 
+void JpgLoader::run(unsigned tid)
+{
+    surface.buf8 = jpgdDecompress(decoder);
+    surface.stride = static_cast<uint32_t>(w);
+    surface.w = static_cast<uint32_t>(w);
+    surface.h = static_cast<uint32_t>(h);
+    surface.cs = ColorSpace::ARGB8888;
+    surface.channelSize = sizeof(uint32_t);
+    surface.premultiplied = true;
+
+    clear();
+}
+
+
 /************************************************************************/
 /* External Class Implementation                                        */
 /************************************************************************/
 
+JpgLoader::JpgLoader() : ImageLoader(FileType::Jpg)
+{
+
+}
+
 
 JpgLoader::~JpgLoader()
 {
-    jpgdDelete(decoder);
-    if (freeData) free(data);
-    free(image);
+    clear();
+    free(surface.buf8);
 }
 
 
 bool JpgLoader::open(const string& path)
 {
-    clear();
-
+#ifdef THORVG_FILE_IO_SUPPORT
     int width, height;
     decoder = jpgdHeader(path.c_str(), &width, &height);
     if (!decoder) return false;
@@ -81,13 +79,14 @@ bool JpgLoader::open(const string& path)
     h = static_cast<float>(height);
 
     return true;
+#else
+    return false;
+#endif
 }
 
 
 bool JpgLoader::open(const char* data, uint32_t size, bool copy)
 {
-    clear();
-
     if (copy) {
         this->data = (char *) malloc(size);
         if (!this->data) return false;
@@ -112,7 +111,9 @@ bool JpgLoader::open(const char* data, uint32_t size, bool copy)
 
 bool JpgLoader::read()
 {
-    if (!decoder || w <= 0 || h <= 0) return false;
+    if (!LoadModule::read()) return true;
+
+    if (!decoder || w == 0 || h == 0) return false;
 
     TaskScheduler::request(this);
 
@@ -122,38 +123,14 @@ bool JpgLoader::read()
 
 bool JpgLoader::close()
 {
+    if (!LoadModule::close()) return false;
     this->done();
-    clear();
     return true;
 }
 
 
-unique_ptr<Surface> JpgLoader::bitmap(uint32_t colorSpace)
+RenderSurface* JpgLoader::bitmap()
 {
     this->done();
-
-    if (!image) return nullptr;
-    if (this->colorSpace != colorSpace) {
-        this->colorSpace = colorSpace;
-        _changeColorSpace(reinterpret_cast<uint32_t*>(image), w, h);
-    }
-
-    auto surface = static_cast<Surface*>(malloc(sizeof(Surface)));
-    surface->buffer = reinterpret_cast<uint32_t*>(image);
-    surface->stride = static_cast<uint32_t>(w);
-    surface->w = static_cast<uint32_t>(w);
-    surface->h = static_cast<uint32_t>(h);
-    surface->cs = colorSpace;
-
-    return unique_ptr<Surface>(surface);
-}
-
-
-void JpgLoader::run(unsigned tid)
-{
-    if (image) {
-        free(image);
-        image = nullptr;
-    }
-    image = jpgdDecompress(decoder);
+    return ImageLoader::bitmap();
 }
